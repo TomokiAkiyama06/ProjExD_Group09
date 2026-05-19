@@ -5,7 +5,7 @@
 ## 実行環境の必要条件
 
 * python >= 3.10
-* pygame >= 2.1
+* pygame >= 2.5.2
 * numpy >= 1.24
 
 ## ゲームの概要
@@ -48,14 +48,31 @@ python main.py --solo
 
 ### 共通基本機能
 
-* 画面・マップ描画と拠点表示
-* プレイヤー1・2の基本操作（タワー設置、キャラ移動、通常攻撃）
-* 1種類のタワー設置と弾の発射
-* 敵の出現と直進移動（NN未搭載の固定動作）
-* ウェーブ管理の最低限の枠組み
-* 共有リソース（エナジー）の管理
-* HUDの基本表示（HP・リソース・ウェーブ番号）
-* soloモード（1台で2プレイヤー操作、テスト・デバッグ用）
+- [x] 画面・マップ描画と拠点表示（`core/world.py`, `core/fortress.py`）
+- [ ] プレイヤー1・2の基本操作（タワー設置、キャラ移動、通常攻撃）※基底のみ `core/base_player.py`、操作実装は別Epicで
+- [x] 1種類のタワー設置と弾の発射（`core/base_tower.py`, `core/bullet.py`）
+- [x] 敵の出現と直進移動（NN未搭載の固定動作）（`core/base_enemy.py`, `core/wave_manager.py`）
+- [x] ウェーブ管理の最低限の枠組み（`core/wave_manager.py` — PREPARE→BATTLE→SUMMARY）
+- [ ] 共有リソース（エナジー）の管理（定数 `INITIAL_GOLD` のみ。管理クラスは未実装）
+- [x] HUDの基本表示（HP・リソース・ウェーブ番号）（`core/base_hud.py`）
+- [ ] soloモード（1台で2プレイヤー操作、テスト・デバッグ用）※別Epic
+
+### core パッケージの主要クラス
+
+`core/` には全担当が継承・利用する基底クラスを配置している。インスタンス変数は `_変数名` 形式、外部アクセスは `get_<name>()` / `set_<name>()` メソッドで統一。
+
+| モジュール | クラス | 役割 |
+|------------|--------|------|
+| `core/constants.py` | （定数） | 画面/色/バランス/担当別セクション |
+| `core/game.py` | `Game` | pygame 初期化・QUIT処理・メインループ |
+| `core/fortress.py` | `Fortress` | 拠点HP・HPバー描画・`take_damage` / `is_destroyed` |
+| `core/base_player.py` | `BasePlayer` | プレイヤー基底（`Builder` / `Fighter` が継承） |
+| `core/base_enemy.py` | `BaseEnemy` | 敵基底（拠点への直進移動）。`EvolvedEnemy` / `BossEnemy` / `SpecialEnemy` が継承 |
+| `core/base_tower.py` | `BaseTower` | タワー基底（射程内最近敵を `find_target`、`attack` で `Bullet` 生成）。4属性タワーが継承 |
+| `core/bullet.py` | `Bullet` | 対象追尾・命中判定・ダメージ適用 |
+| `core/world.py` | `World` | 出現口・タワー配置可否判定・全エンティティの update/draw 統括 |
+| `core/wave_manager.py` | `WaveManager` / `WavePhase` | ウェーブ進行（敵factoryで差し替え可能） |
+| `core/base_hud.py` | `BaseHud` | HUD基底（HP / Resource / Wave / Generation 表示）。`ExtendedHud` が継承 |
 
 ### 分担追加機能
 

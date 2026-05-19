@@ -15,10 +15,10 @@ import json
 import os
 import sys
 import urllib.error
-import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any
+
 
 LABELS_FILE = Path(__file__).resolve().parents[1] / ".github" / "issue-labels.json"
 API_BASE_URL = "https://api.github.com"
@@ -93,8 +93,7 @@ def create_or_update_label(repo: str, token: str, label: dict[str, str], dry_run
         print(f"[ERROR] failed to create {name}: status={status}, body={body}", file=sys.stderr)
         return
 
-    encoded_name = urllib.parse.quote(name, safe="")
-    update_url = f"{API_BASE_URL}/repos/{repo}/labels/{encoded_name}"
+    update_url = f"{API_BASE_URL}/repos/{repo}/labels/{name.replace(' ', '%20').replace(':', '%3A')}"
     status, body = request_github("PATCH", update_url, token, payload)
 
     if status == 200:
@@ -108,16 +107,8 @@ def parse_args() -> argparse.Namespace:
     """コマンドライン引数を解析する。"""
     parser = argparse.ArgumentParser(description="GitHub Issueラベルを同期する")
     parser.add_argument("--repo", required=True, help="owner/name 形式のリポジトリ名")
-    parser.add_argument(
-        "--token",
-        default=os.getenv("GITHUB_TOKEN"),
-        help="GitHub Personal Access Token",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="実際には作成・更新せず内容だけ表示する",
-    )
+    parser.add_argument("--token", default=os.getenv("GITHUB_TOKEN"), help="GitHub Personal Access Token")
+    parser.add_argument("--dry-run", action="store_true", help="実際には作成・更新せず内容だけ表示する")
     return parser.parse_args()
 
 
