@@ -26,9 +26,12 @@ from combat.weapons import (
     RangedWeapon,
 )
 from core.base_enemy import BaseEnemy
+from core.constants import BOSS_WAVE_MODULO
 from core.fighter import Fighter
 from core.fortress import Fortress
+from core.wave_manager import WaveManager
 from core.world import World
+from main import create_solo_game
 
 # ===== effects =====
 
@@ -192,8 +195,22 @@ def test_boss_special_burst_damages_player() -> None:
     # 特殊行動の発動間隔を進める（BOSS_SPECIAL_INTERVAL = 5.0 秒）
     for _ in range(int(6.0 * 60)):
         boss.update_with_world(1.0 / 60.0, world)
+        world.update(1.0 / 60.0)
     # プレイヤーがダメージを受けた（特殊行動が発火した）
     assert fighter.get_hp() < 100
+
+
+def test_boss_world_tick_does_not_move_boss() -> None:
+    boss = BossEnemy(pos=(200.0, 100.0))
+    world = World()
+    world.add_enemy(boss)
+    start = boss.get_pos()
+
+    boss.update_with_world(1.0, world)
+    assert boss.get_pos() == start
+
+    world.update(1.0)
+    assert boss.get_pos() != start
 
 
 def test_boss_death_effect_runs_once() -> None:
@@ -264,6 +281,22 @@ def test_fighter_with_weapons_and_skills() -> None:
     pg.quit()
 
 
+def test_create_solo_game_supplies_combat_defaults() -> None:
+    game = create_solo_game()
+    fighter = game.get_fighter()
+
+    assert fighter.get_current_weapon() is not None
+    assert fighter.get_current_skill() is not None
+
+    pg.quit()
+
+
+def test_wave_manager_default_reaches_boss_wave() -> None:
+    manager = WaveManager(boss_factory=BossEnemy)
+
+    assert manager.get_max_wave() >= BOSS_WAVE_MODULO
+
+
 if __name__ == "__main__":
     test_effects_spawn_explosion_creates_particles()
     test_effects_particles_decay()
@@ -279,9 +312,12 @@ if __name__ == "__main__":
     test_area_skill_damages_enemies_in_range()
     test_boss_has_high_hp_and_special_action()
     test_boss_special_burst_damages_player()
+    test_boss_world_tick_does_not_move_boss()
     test_boss_death_effect_runs_once()
     test_fast_enemy_is_fast()
     test_shielded_enemy_absorbs_damage()
     test_shielded_enemy_takes_damage_after_shield_broken()
     test_fighter_with_weapons_and_skills()
+    test_create_solo_game_supplies_combat_defaults()
+    test_wave_manager_default_reaches_boss_wave()
     print("All combat tests passed.")

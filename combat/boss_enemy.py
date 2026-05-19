@@ -88,8 +88,7 @@ class BossEnemy(BaseEnemy):
         )
 
     def update_with_world(self, dt: float, world: World) -> None:
-        """通常の `update(fortress, dt)` に加え、特殊行動（周囲AOE）を処理する。"""
-        super().update(world.get_fortress(), dt)
+        """World 連携が必要な特殊行動（周囲AOE）だけを処理する。"""
         if self.is_dead() or self.has_reached_fortress():
             return
         self._special_timer = max(0.0, self._special_timer - dt)
