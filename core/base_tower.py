@@ -31,13 +31,50 @@ class BaseTower:
         pos: tuple[float, float] = (0.0, 0.0),
         range_: float = TOWER_BASE_RANGE,
         damage: int = TOWER_BASE_DAMAGE,
-        cooldown: float = TOWER_BASE_COOLDOWN,
+        cooldown: float | None = None,
+        fire_cooldown: float | None = None,
     ) -> None:
+        if cooldown is None:
+            cooldown = (
+                fire_cooldown if fire_cooldown is not None else TOWER_BASE_COOLDOWN
+            )
         self._pos: tuple[float, float] = pos
         self._range: float = range_
         self._damage: int = damage
         self._cooldown: float = cooldown
         self._last_shot_tick: float = -cooldown  # 起動直後から撃てるように
+
+    @property
+    def damage(self) -> int:
+        return self._damage
+
+    @damage.setter
+    def damage(self, value: int) -> None:
+        self.set_damage(value)
+
+    @property
+    def range(self) -> float:
+        return self._range
+
+    @range.setter
+    def range(self, value: float) -> None:
+        self.set_range(value)
+
+    @property
+    def cooldown(self) -> float:
+        return self._cooldown
+
+    @cooldown.setter
+    def cooldown(self, value: float) -> None:
+        self.set_cooldown(value)
+
+    @property
+    def fire_cooldown(self) -> float:
+        return self._cooldown
+
+    @fire_cooldown.setter
+    def fire_cooldown(self, value: float) -> None:
+        self.set_cooldown(value)
 
     def get_pos(self) -> tuple[float, float]:
         return self._pos
@@ -47,6 +84,9 @@ class BaseTower:
 
     def get_range(self) -> float:
         return self._range
+
+    def set_range(self, value: float) -> None:
+        self._range = max(0.0, value)
 
     def get_damage(self) -> int:
         return self._damage

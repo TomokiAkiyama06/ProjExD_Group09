@@ -10,7 +10,7 @@ import math
 
 import pygame as pg
 
-from .constants import COLOR_ENEMY, ENEMY_BASE_DAMAGE, ENEMY_BASE_HP
+from .constants import COLOR_ENEMY, ENEMY_BASE_DAMAGE, ENEMY_BASE_HP, ENEMY_BASE_REWARD
 from .fortress import Fortress
 
 
@@ -27,13 +27,23 @@ class BaseEnemy:
         hp: int = ENEMY_BASE_HP,
         speed: float = DEFAULT_SPEED,
         damage: int = ENEMY_BASE_DAMAGE,
+        reward: int = ENEMY_BASE_REWARD,
     ) -> None:
         self._pos: tuple[float, float] = pos
         self._max_hp: int = hp
         self._hp: int = hp
         self._speed: float = speed
         self._damage: int = damage
+        self._reward: int = max(0, reward)
         self._reached: bool = False
+
+    @property
+    def reward(self) -> int:
+        return self._reward
+
+    @reward.setter
+    def reward(self, value: int) -> None:
+        self.set_reward(value)
 
     def get_pos(self) -> tuple[float, float]:
         return self._pos
@@ -49,6 +59,12 @@ class BaseEnemy:
 
     def get_damage(self) -> int:
         return self._damage
+
+    def get_reward(self) -> int:
+        return self._reward
+
+    def set_reward(self, value: int) -> None:
+        self._reward = max(0, value)
 
     def get_speed(self) -> float:
         return self._speed
@@ -80,6 +96,10 @@ class BaseEnemy:
             self._reached = True
             return
         step = self._speed * dt
+        if step >= dist - self.CONTACT_DISTANCE:
+            fortress.take_damage(self._damage)
+            self._reached = True
+            return
         nx = x + (vx / dist) * step
         ny = y + (vy / dist) * step
         self._pos = (nx, ny)

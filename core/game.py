@@ -40,7 +40,7 @@ class Game:
             if event.type == pg.QUIT:
                 self._running = False
 
-    def update(self) -> None:
+    def update(self, dt: float) -> None:
         """1フレーム分の状態更新。派生クラスでオーバーライドする。"""
         raise NotImplementedError
 
@@ -56,7 +56,7 @@ class Game:
             if not self._running:
                 break
             self._screen.fill(COLOR_BG)
-            self.update()
+            self.update(self._dt)
             self.draw()
             pg.display.flip()
         pg.quit()
