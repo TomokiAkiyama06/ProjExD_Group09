@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from .evolution_manager import EvolutionManager
-from .neural_net import NeuralNet
+from evolution.evolution_manager import EvolutionManager
+from evolution.neural_net import NeuralNet
 
 
 def test_neural_net_forward_shape() -> None:
