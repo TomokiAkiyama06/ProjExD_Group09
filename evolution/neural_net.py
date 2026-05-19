@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import numpy as np
 
-
 DEFAULT_INPUT_SIZE: int = 12
 DEFAULT_HIDDEN_SIZE: int = 16
 DEFAULT_OUTPUT_SIZE: int = 2

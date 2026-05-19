@@ -17,7 +17,7 @@ def test_neural_net_forward_shape() -> None:
 def test_neural_net_forward_output_range() -> None:
     net = NeuralNet()
     output = net.forward(np.ones(12))
-    assert np.all((-1.0 <= output) & (output <= 1.0))
+    assert np.all((output >= -1.0) & (output <= 1.0))
 
 
 def test_neural_net_rejects_wrong_input_shape() -> None:
