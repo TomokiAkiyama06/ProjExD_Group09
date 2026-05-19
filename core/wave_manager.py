@@ -68,6 +68,17 @@ class WaveManager:
         """全ウェーブを完走した状態。"""
         return self._wave >= self._max_wave and self._phase is WavePhase.SUMMARY
 
+    def request_wave_skip(self) -> bool:
+        """PREPARE フェーズなら即 BATTLE に移行する。
+
+        Returns:
+            実際にスキップした場合 True。
+        """
+        if self._phase is not WavePhase.PREPARE:
+            return False
+        self._phase_timer = 0.0
+        return True
+
     # ----- internal -----
 
     def _enter_battle(self) -> None:
