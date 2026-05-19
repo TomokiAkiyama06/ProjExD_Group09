@@ -42,7 +42,14 @@ SERVER_PORT: int = 50000
 # 担当①が記述
 
 # ===== ネットワーク（担当②） =====
-# 担当②が記述
+NET_STATE_HZ: int = 20  # ホスト→クライアントの状態ブロードキャスト周波数
+NET_INPUT_HZ: int = 30  # クライアント→ホストの操作送信周波数
+NET_PING_INTERVAL_SEC: float = 0.5  # ping を送る間隔（2Hz）
+NET_TIMEOUT_SEC: float = 5.0  # 最終受信からこの秒数経過で切断扱い
+NET_ACK_RESEND_INTERVAL_SEC: float = 0.5  # ACK 待ちタイムアウト→再送
+NET_ACK_MAX_RETRIES: int = 5  # ACK 再送の最大回数
+NET_RECV_BUFFER_BYTES: int = 4096  # recvfrom のバッファサイズ
+NET_RECV_TIMEOUT_SEC: float = 0.2  # 受信スレッドの select タイムアウト
 
 # ===== タワー属性（担当③） =====
 # 担当③が記述
