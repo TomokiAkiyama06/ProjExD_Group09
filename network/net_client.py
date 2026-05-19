@@ -300,9 +300,11 @@ class NetClient:
             if not ready:
                 continue
             try:
-                payload, _ = sock.recvfrom(NET_RECV_BUFFER_BYTES)
+                payload, address = sock.recvfrom(NET_RECV_BUFFER_BYTES)
             except OSError as exc:
                 self._errors.append(f"recvfrom failed: {exc!r}")
+                continue
+            if address != (self._host, self._port):
                 continue
             self._handle_packet(payload)
 
