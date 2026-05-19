@@ -40,12 +40,6 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-開発用ツールも使う場合は、以下も実行します。
-
-```bash
-pip install -r requirements-dev.txt
-```
-
 ### Condaを使う場合
 
 Condaを使っている場合は、以下のように環境を作成します。
@@ -59,12 +53,6 @@ conda activate projexd-group09
 
 ```bash
 pip install -r requirements.txt
-```
-
-開発用ツールも使う場合は、以下も実行します。
-
-```bash
-pip install -r requirements-dev.txt
 ```
 
 環境を終了する場合:
