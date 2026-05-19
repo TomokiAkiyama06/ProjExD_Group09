@@ -35,9 +35,7 @@ class BaseTower:
         fire_cooldown: float | None = None,
     ) -> None:
         if cooldown is None:
-            cooldown = (
-                fire_cooldown if fire_cooldown is not None else TOWER_BASE_COOLDOWN
-            )
+            cooldown = fire_cooldown if fire_cooldown is not None else TOWER_BASE_COOLDOWN
         self._pos: tuple[float, float] = pos
         self._range: float = range_
         self._damage: int = damage
@@ -56,7 +54,7 @@ class BaseTower:
     def range(self) -> float:
         return self._range
 
-    @range.setter
+    @range.setter  # noqa: A003
     def range(self, value: float) -> None:
         self.set_range(value)
 
