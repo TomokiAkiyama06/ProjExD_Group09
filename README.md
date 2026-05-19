@@ -43,12 +43,43 @@ python main.py --solo
 
 * `ruff check . --output-format=github`
 * `ruff format . --check`
+* `python -m compileall .`
+* リポジトリ内の `test_*.py` を簡易テストランナーで実行
 
 Pull Requestを出す前に、ローカルでも以下を実行して確認してください。
 
 ```bash
 ruff check .
 ruff format . --check
+python -m compileall .
+python - <<'PY'
+from pathlib import Path
+import runpy
+import sys
+
+repo_root = Path(".").resolve()
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
+
+test_files = sorted(Path(".").rglob("test_*.py"))
+
+if not test_files:
+    print("No test_*.py files found. Skipping simple test runner.")
+    raise SystemExit(0)
+
+for path in test_files:
+    if any(part in {".venv", "venv", "__pycache__"} for part in path.parts):
+        continue
+    print(f"Running {path}")
+    namespace = runpy.run_path(str(path), run_name="__main__")
+    test_functions = [
+        value
+        for name, value in sorted(namespace.items())
+        if name.startswith("test_") and callable(value)
+    ]
+    for test_function in test_functions:
+        test_function()
+PY
 ```
 
 ## 操作方法
