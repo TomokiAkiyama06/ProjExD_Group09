@@ -46,6 +46,7 @@ from .net_protocol import (
     MSG_ACK,
     MSG_CONNECT,
     MSG_EVENT,
+    MSG_INPUT,
     MSG_PING,
     decode_message,
     deserialize,
@@ -187,8 +188,14 @@ class NetServer:
         now = time.monotonic()
         with self._lock:
             client = self._clients.get(address)
-            if client is not None:
-                client.last_seen = now
+            if client is None:
+                return
+            client.last_seen = now
+            if msg_type == MSG_INPUT:
+                seq = int(msg.get("seq", -1))
+                if seq <= client.last_seq:
+                    return
+                client.last_seq = seq
         if msg_type == MSG_EVENT and bool(msg.get("ack_required", False)):
             self._send_raw(make_ack(int(msg.get("seq", 0))), address)
 
@@ -295,8 +302,6 @@ class NetServer:
         with self._lock:
             targets = [c.address for c in self._clients.values()] if target is None else [target]
         now = time.monotonic()
-        for addr in targets:
-            self._send_raw(msg, addr)
         if ack_required and targets:
             with self._lock:
                 self._pending[seq] = _PendingEvent(
@@ -306,6 +311,8 @@ class NetServer:
                     retries=0,
                     last_sent_at=now,
                 )
+        for addr in targets:
+            self._send_raw(msg, addr)
         return seq
 
     # ----- main-loop tick -----

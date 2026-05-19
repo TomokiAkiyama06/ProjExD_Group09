@@ -20,7 +20,7 @@ from network.net_protocol import (
     make_state,
     serialize,
 )
-from network.net_server import NetServer, _PendingEvent
+from network.net_server import NetServer, PlayerInfo, _PendingEvent
 from network.state_buffer import StateBuffer
 
 # ===== net_protocol =====
@@ -138,7 +138,14 @@ def test_loopback_handshake_and_state() -> None:
 
         # input を送信し、サーバ側のキューに積まれること
         client.send_input({"move": [1.0, 0.0]})
-        assert _wait_until(lambda: bool(server.poll_messages()) or True, timeout=0.5)
+        received_inputs: list[dict] = []
+
+        def _server_received_input() -> bool:
+            received_inputs.extend(msg for _, msg in server.poll_messages())
+            return any(msg.get("type") == "input" for msg in received_inputs)
+
+        assert _wait_until(_server_received_input, timeout=0.5)
+        assert received_inputs[0]["input"] == {"move": [1.0, 0.0]}
         # 接続管理: clients に 1 件
         assert len(server.get_clients()) == 1
     finally:
@@ -222,6 +229,43 @@ def test_server_ack_tracks_pending_targets_per_client() -> None:
     assert 7 not in server._pending
 
 
+def test_server_rejects_messages_from_unconnected_address() -> None:
+    server = NetServer()
+    addr = ("127.0.0.1", 10001)
+
+    server._handle_packet(serialize(make_input(1, 1, {"move": [1, 0]})), addr)
+    assert server.poll_messages() == []
+
+
+def test_server_discards_stale_input_seq() -> None:
+    server = NetServer()
+    addr = ("127.0.0.1", 10001)
+    server._clients[addr] = PlayerInfo(player_id=1, name="p1", address=addr)
+
+    server._handle_packet(serialize(make_input(2, 1, {"move": [2, 0]})), addr)
+    server._handle_packet(serialize(make_input(1, 1, {"move": [1, 0]})), addr)
+
+    messages = server.poll_messages()
+    assert len(messages) == 1
+    assert messages[0][1]["seq"] == 2
+
+
+def test_server_registers_pending_before_sending_event() -> None:
+    server = NetServer()
+    addr = ("127.0.0.1", 10001)
+    server._clients[addr] = PlayerInfo(player_id=1, name="p1", address=addr)
+
+    def _ack_immediately(msg: dict, address: tuple[str, int]) -> bool:
+        seq = int(msg["seq"])
+        assert seq in server._pending
+        server._handle_ack(address, make_ack(seq))
+        return True
+
+    server._send_raw = _ack_immediately  # type: ignore[method-assign]
+    seq = server.send_event("tower_placed", ack_required=True)
+    assert seq not in server._pending
+
+
 if __name__ == "__main__":
     test_protocol_round_trip()
     test_serialize_round_trip()
@@ -235,4 +279,7 @@ if __name__ == "__main__":
     test_loopback_event_with_ack()
     test_loopback_client_event_receives_ack()
     test_server_ack_tracks_pending_targets_per_client()
+    test_server_rejects_messages_from_unconnected_address()
+    test_server_discards_stale_input_seq()
+    test_server_registers_pending_before_sending_event()
     print("All network tests passed.")
