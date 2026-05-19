@@ -1,0 +1,147 @@
+[
+  {
+    "name": "type: epic",
+    "color": "5319e7",
+    "description": "大きな機能・テーマを管理する親Issue"
+  },
+  {
+    "name": "type: story",
+    "color": "1d76db",
+    "description": "ユーザー視点の価値を表すIssue"
+  },
+  {
+    "name": "type: task",
+    "color": "0e8a16",
+    "description": "実装作業・環境構築・CI整備など"
+  },
+  {
+    "name": "type: bug",
+    "color": "d73a4a",
+    "description": "不具合報告・修正"
+  },
+  {
+    "name": "type: experiment",
+    "color": "fbca04",
+    "description": "検証・調査・技術選定・設計検討"
+  },
+  {
+    "name": "type: docs",
+    "color": "0075ca",
+    "description": "README・仕様書・設計メモなどの整備"
+  },
+  {
+    "name": "area: core",
+    "color": "c2e0c6",
+    "description": "core領域に関するIssue"
+  },
+  {
+    "name": "area: evolution",
+    "color": "c2e0c6",
+    "description": "進化AI領域に関するIssue"
+  },
+  {
+    "name": "area: network",
+    "color": "c2e0c6",
+    "description": "ネットワーク領域に関するIssue"
+  },
+  {
+    "name": "area: towers",
+    "color": "c2e0c6",
+    "description": "タワー領域に関するIssue"
+  },
+  {
+    "name": "area: combat",
+    "color": "c2e0c6",
+    "description": "戦闘・演出領域に関するIssue"
+  },
+  {
+    "name": "area: presentation",
+    "color": "c2e0c6",
+    "description": "表示・対戦・可視化領域に関するIssue"
+  },
+  {
+    "name": "area: dev-env",
+    "color": "c2e0c6",
+    "description": "ローカル開発環境に関するIssue"
+  },
+  {
+    "name": "area: infra",
+    "color": "c2e0c6",
+    "description": "基盤・設定に関するIssue"
+  },
+  {
+    "name": "area: ci",
+    "color": "c2e0c6",
+    "description": "CI・自動化に関するIssue"
+  },
+  {
+    "name": "area: docs",
+    "color": "c2e0c6",
+    "description": "ドキュメント領域に関するIssue"
+  },
+  {
+    "name": "area: ux",
+    "color": "c2e0c6",
+    "description": "ユーザー体験・UIに関するIssue"
+  },
+  {
+    "name": "priority: high",
+    "color": "b60205",
+    "description": "優先度が高いIssue"
+  },
+  {
+    "name": "priority: medium",
+    "color": "fbca04",
+    "description": "優先度が中程度のIssue"
+  },
+  {
+    "name": "priority: low",
+    "color": "0e8a16",
+    "description": "優先度が低いIssue"
+  },
+  {
+    "name": "status: needs-discussion",
+    "color": "d4c5f9",
+    "description": "議論・確認が必要なIssue"
+  },
+  {
+    "name": "status: ready",
+    "color": "c5def5",
+    "description": "着手可能なIssue"
+  },
+  {
+    "name": "status: in-progress",
+    "color": "bfdadc",
+    "description": "作業中のIssue"
+  },
+  {
+    "name": "status: blocked",
+    "color": "e99695",
+    "description": "ブロックされているIssue"
+  },
+  {
+    "name": "status: review",
+    "color": "fef2c0",
+    "description": "レビュー待ち・レビュー中のIssue"
+  },
+  {
+    "name": "size: xs",
+    "color": "ededed",
+    "description": "30分〜1時間程度のIssue"
+  },
+  {
+    "name": "size: s",
+    "color": "ededed",
+    "description": "半日程度のIssue"
+  },
+  {
+    "name": "size: m",
+    "color": "ededed",
+    "description": "1〜2日程度のIssue"
+  },
+  {
+    "name": "size: l",
+    "color": "ededed",
+    "description": "3日以上。分割推奨のIssue"
+  }
+]
