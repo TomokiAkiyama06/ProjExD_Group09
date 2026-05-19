@@ -45,10 +45,12 @@ except ImportError:
 from .net_protocol import (
     MSG_ACK,
     MSG_CONNECT,
+    MSG_EVENT,
     MSG_PING,
     decode_message,
     deserialize,
     encode_message,
+    make_ack,
     make_connect_ok,
     make_event,
     make_pong,
@@ -178,7 +180,7 @@ class NetServer:
             self._handle_ping(address, msg)
             return
         if msg_type == MSG_ACK:
-            self._handle_ack(msg)
+            self._handle_ack(address, msg)
             return
 
         # 接続済みクライアントからの input / event はメインスレッドへ
@@ -187,6 +189,8 @@ class NetServer:
             client = self._clients.get(address)
             if client is not None:
                 client.last_seen = now
+        if msg_type == MSG_EVENT and bool(msg.get("ack_required", False)):
+            self._send_raw(make_ack(int(msg.get("seq", 0))), address)
 
         self._inbox.put((address, msg))
 
@@ -219,10 +223,16 @@ class NetServer:
                 client.last_seen = now
         self._send_raw(make_pong(seq), address)
 
-    def _handle_ack(self, msg: dict[str, Any]) -> None:
+    def _handle_ack(self, address: Address, msg: dict[str, Any]) -> None:
         seq = int(msg.get("seq", -1))
         with self._lock:
-            self._pending.pop(seq, None)
+            pending = self._pending.get(seq)
+            if pending is None:
+                return
+            if address in pending.targets:
+                pending.targets.remove(address)
+            if not pending.targets:
+                self._pending.pop(seq, None)
 
     # ----- send -----
 

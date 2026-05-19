@@ -20,7 +20,7 @@ from network.net_protocol import (
     make_state,
     serialize,
 )
-from network.net_server import NetServer
+from network.net_server import NetServer, _PendingEvent
 from network.state_buffer import StateBuffer
 
 # ===== net_protocol =====
@@ -178,6 +178,50 @@ def test_loopback_event_with_ack() -> None:
         server.stop()
 
 
+def test_loopback_client_event_receives_ack() -> None:
+    server = NetServer(host="127.0.0.1", port=0)
+    server.start()
+    bound = server.get_bound_address()
+    assert bound is not None
+    host, port = bound
+    client = NetClient(host=host, port=port, name="loop")
+    try:
+        assert client.connect(timeout=1.5)
+        seq = client.send_event("send_enemy", data={"kind": "fast"}, ack_required=True)
+        assert seq in client._pending
+
+        received: list[dict] = []
+
+        def _server_received_event() -> bool:
+            received.extend(msg for _, msg in server.poll_messages())
+            return bool(received)
+
+        assert _wait_until(_server_received_event)
+        assert received[0]["event"] == "send_enemy"
+        assert _wait_until(lambda: seq not in client._pending)
+    finally:
+        client.stop()
+        server.stop()
+
+
+def test_server_ack_tracks_pending_targets_per_client() -> None:
+    server = NetServer()
+    addr1 = ("127.0.0.1", 10001)
+    addr2 = ("127.0.0.1", 10002)
+    server._pending[7] = _PendingEvent(
+        seq=7,
+        payload=b"{}",
+        targets=[addr1, addr2],
+    )
+
+    server._handle_ack(addr1, make_ack(7))
+    assert 7 in server._pending
+    assert server._pending[7].targets == [addr2]
+
+    server._handle_ack(addr2, make_ack(7))
+    assert 7 not in server._pending
+
+
 if __name__ == "__main__":
     test_protocol_round_trip()
     test_serialize_round_trip()
@@ -189,4 +233,6 @@ if __name__ == "__main__":
     test_state_buffer_add_alias()
     test_loopback_handshake_and_state()
     test_loopback_event_with_ack()
+    test_loopback_client_event_receives_ack()
+    test_server_ack_tracks_pending_targets_per_client()
     print("All network tests passed.")
