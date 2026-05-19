@@ -9,13 +9,11 @@ from .constants import FPS
 
 
 class Updatable(Protocol):
-    def update(self, dt: float) -> None:
-        ...
+    def update(self, dt: float) -> None: ...
 
 
 class Drawable(Protocol):
-    def draw(self, surface: object) -> None:
-        ...
+    def draw(self, surface: object) -> None: ...
 
 
 @dataclass
