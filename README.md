@@ -127,7 +127,7 @@ PY
 | `core/wave_manager.py` | `WaveManager` / `WavePhase` | ウェーブ進行（敵factoryで差し替え可能） |
 | `core/base_hud.py` | `BaseHud` | HUD基底（HP / Resource / Wave / Generation 表示）。`ExtendedHud` が継承 |
 
-### 前線戦闘と演出（担当④）
+### 前線戦闘と演出（秋山担当）
 
 前線役プレイヤーの武器・スキル、ボス敵・特殊敵、視覚演出（パーティクル/波紋）を `combat/` パッケージに実装。`core` 側との結合を疎にするため、エフェクトは `core.world.EffectSink` Protocol を介して注入し、武器・スキルは `Fighter.__init__` で外部から受け取る（`TYPE_CHECKING` ガード）。
 
@@ -159,7 +159,7 @@ PY
 * **進化NNによる敵移動システム（担当：XXX）** ：敵が個別に小さなニューラルネットを持ち、遺伝的アルゴリズムによりウェーブごとに進化する機能。NumPyのみで実装し、敵の経路選択を世代を経るごとに最適化する
 * **LANネットワーク通信（担当：XXX）** ：UDPによる権威サーバ型のクライアント-サーバ通信機能。ホストがゲームロジックを保持し、20Hzで状態同期、30Hzで操作受信、重要イベントはACK＋再送で確実に伝達する
 * **タワー属性・アップグレードシステム（担当：XXX）** ：炎／氷／雷／物理の4属性タワーと、レベルアップ機能。属性ごとに敵への効果が異なり、戦略性を生む
-* **前線プレイヤー武器・スキル＋特殊敵・ボス・エフェクト（担当④）** ：3 種武器（MELEE/RANGED/AREA）の切替、スキル（DashAttack/AreaAttack）、ボス敵（HP×15・周囲AOE）と特殊敵（FastEnemy/ShieldedEnemy）、パーティクルエフェクト（爆発/命中/マズル/波紋）。`combat/` パッケージで実装済み
+* **前線プレイヤー武器・スキル＋特殊敵・ボス・エフェクト（秋山担当）** ：3 種武器（MELEE/RANGED/AREA）の切替、スキル（DashAttack/AreaAttack）、ボス敵（HP×15・周囲AOE）と特殊敵（FastEnemy/ShieldedEnemy）、パーティクルエフェクト（爆発/命中/マズル/波紋）。`combat/` パッケージで実装済み
 * **対戦モード＋進化可視化＋HUD拡張＋サウンド（担当：XXX）** ：互いに敵を送り合う対戦モード、世代ごとの適応度グラフ、詳細HUD、BGM・効果音
 
 ### ToDo
