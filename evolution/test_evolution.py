@@ -32,11 +32,28 @@ def test_neural_net_rejects_wrong_input_shape() -> None:
 
 def test_neural_net_set_weights_matches_forward_result() -> None:
     net = NeuralNet()
-    copied_net = NeuralNet()
-    copied_net.set_weights(net.get_weights())
+    # b1/b2 に非ゼロ値を設定してバイアスのコピー漏れも検出できるようにする
+    w1, b1, w2, b2 = net.get_weights()
+    b1[:] = np.linspace(-0.5, 0.5, b1.shape[0])
+    b2[:] = np.linspace(-0.3, 0.3, b2.shape[0])
+    net.set_weights([w1, b1, w2, b2])
 
     input_vec = np.linspace(0.0, 1.0, DEFAULT_INPUT_SIZE)
-    assert np.allclose(copied_net.forward(input_vec), net.forward(input_vec))
+    expected = net.forward(input_vec)
+
+    copied_net = NeuralNet()
+    weights = net.get_weights()
+    copied_net.set_weights(weights)
+    assert np.allclose(copied_net.forward(input_vec), expected)
+
+    # set_weights が defensive copy: 渡した配列を変更してもコピー先は影響を受けない
+    weights[0][0, 0] += 999.0
+    assert np.allclose(copied_net.forward(input_vec), expected)
+
+    # get_weights が defensive copy: 返された配列を変更しても元のNNは影響を受けない
+    leaked = net.get_weights()
+    leaked[0][0, 0] += 999.0
+    assert np.allclose(net.forward(input_vec), expected)
 
 
 def test_neural_net_clone_keeps_independent_weights() -> None:
