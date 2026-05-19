@@ -66,9 +66,9 @@ class Builder(BasePlayer):
         """単発イベント（クリック・キー押下）を処理する。"""
         if event.type == pg.MOUSEBUTTONDOWN:
             if event.button == 1:
-                self._try_place_tower(world, pg.mouse.get_pos())
+                self._try_place_tower(world, event.pos)
             elif event.button == 3:
-                self._select_tower_at(world, pg.mouse.get_pos())
+                self._select_tower_at(world, event.pos)
             return
 
         if event.type == pg.KEYDOWN:
