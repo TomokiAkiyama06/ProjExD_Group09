@@ -101,14 +101,48 @@ class NeuralNet:
         output: np.ndarray = np.tanh(hidden @ self._w2 + self._b2)
         return output
 
-    def copy(self) -> NeuralNet:
+    def get_weights(self) -> list[np.ndarray]:
+        """全重み・バイアスのコピーをリストで返す。
+
+        Returns:
+            ``[w1, b1, w2, b2]`` の順で格納したndarrayのリスト
+        """
+        return [self._w1.copy(), self._b1.copy(), self._w2.copy(), self._b2.copy()]
+
+    def set_weights(self, weights: list[np.ndarray]) -> None:
+        """重み・バイアスをリストから設定する。
+
+        Args:
+            weights: ``get_weights()`` と同じ順序の ``[w1, b1, w2, b2]``
+
+        Raises:
+            ValueError: 要素数が4でない場合、または各配列の形状が合わない場合
+        """
+        if len(weights) != 4:
+            raise ValueError(f"weights must have 4 arrays, got {len(weights)}")
+        w1, b1, w2, b2 = weights
+        if w1.shape != self._w1.shape:
+            raise ValueError(f"w1 shape mismatch: expected {self._w1.shape}, got {w1.shape}")
+        if b1.shape != self._b1.shape:
+            raise ValueError(f"b1 shape mismatch: expected {self._b1.shape}, got {b1.shape}")
+        if w2.shape != self._w2.shape:
+            raise ValueError(f"w2 shape mismatch: expected {self._w2.shape}, got {w2.shape}")
+        if b2.shape != self._b2.shape:
+            raise ValueError(f"b2 shape mismatch: expected {self._b2.shape}, got {b2.shape}")
+        self._w1 = w1.copy()
+        self._b1 = b1.copy()
+        self._w2 = w2.copy()
+        self._b2 = b2.copy()
+
+    def clone(self) -> NeuralNet:
         """同じ重みを持つ独立したニューラルネットを作成する。"""
-        clone = NeuralNet(self._input_size, self._hidden_size, self._output_size)
-        clone._w1 = self._w1.copy()
-        clone._b1 = self._b1.copy()
-        clone._w2 = self._w2.copy()
-        clone._b2 = self._b2.copy()
-        return clone
+        new_net = NeuralNet(self._input_size, self._hidden_size, self._output_size)
+        new_net.set_weights(self.get_weights())
+        return new_net
+
+    def copy(self) -> NeuralNet:
+        """``clone()`` の別名。後方互換性のために残す。"""
+        return self.clone()
 
     @staticmethod
     def _validate_layer_size(name: str, value: int) -> None:
