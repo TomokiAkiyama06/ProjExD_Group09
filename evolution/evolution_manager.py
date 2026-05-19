@@ -85,7 +85,7 @@ class EvolutionManager:
         self._validate_selection_inputs(population, fitness_list)
         elite_count = n_elite
         if elite_count is None:
-            elite_count = int(len(population) * EVOLUTION_ELITE_RATE)
+            elite_count = max(1, int(len(population) * EVOLUTION_ELITE_RATE))
         elite_count = max(0, min(elite_count, len(population)))
 
         order = np.argsort(fitness_list)[::-1]
