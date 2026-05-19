@@ -1,0 +1,66 @@
+name: "Epic"
+description: "大きな機能・テーマを管理するIssue"
+title: "[Epic] "
+labels: ["type: epic"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: "概要"
+      description: "このEpicで実現したい大きな目的を書く"
+      placeholder: "例: 会議音声アップロード機能を実装する"
+    validations:
+      required: true
+
+  - type: textarea
+    id: value
+    attributes:
+      label: "目的・価値"
+      description: "なぜこのEpicが必要か"
+      placeholder: "例: ユーザーが会議音声を入力として分析できるようにするため"
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: "含める範囲"
+      placeholder: |
+        - 音声ファイルのアップロード
+        - アップロード後の分析開始
+        - エラー表示
+    validations:
+      required: true
+
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: "含めない範囲"
+      placeholder: |
+        - 動画フレーム解析
+        - 本番デプロイ
+    validations:
+      required: true
+
+  - type: textarea
+    id: child_issues
+    attributes:
+      label: "関連Story / Task"
+      description: "作成後に子Issueをリンクする"
+      placeholder: |
+        - #10
+        - #11
+        - #12
+    validations:
+      required: false
+
+  - type: textarea
+    id: done
+    attributes:
+      label: "完了条件"
+      placeholder: |
+        - 関連Storyがすべて完了している
+        - 主要なTaskが完了している
+        - READMEや操作手順が更新されている
+    validations:
+      required: true

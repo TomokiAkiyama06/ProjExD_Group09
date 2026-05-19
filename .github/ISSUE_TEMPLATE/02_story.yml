@@ -1,0 +1,57 @@
+name: "Story"
+description: "ユーザー視点の価値を表すIssue"
+title: "[Story] "
+labels: ["type: story"]
+body:
+  - type: textarea
+    id: user_story
+    attributes:
+      label: "User Story"
+      description: "誰が、何をしたくて、なぜ必要か"
+      placeholder: |
+        As a ユーザー,
+        I want to 会議音声をアップロードしたい,
+        So that 会議内容を自動で評価できる.
+    validations:
+      required: true
+
+  - type: textarea
+    id: background
+    attributes:
+      label: "背景"
+      placeholder: "例: 現状はテキスト入力しかできず、実際の会議データを扱いづらい"
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: "Acceptance Criteria"
+      description: "ユーザー視点での完了条件"
+      placeholder: |
+        - ユーザーが音声ファイルを選択できる
+        - アップロード後に分析が開始される
+        - 失敗時に理由が表示される
+    validations:
+      required: true
+
+  - type: textarea
+    id: related_tasks
+    attributes:
+      label: "関連Task"
+      placeholder: |
+        - #xx
+        - #xx
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "優先度"
+      options:
+        - "High"
+        - "Medium"
+        - "Low"
+    validations:
+      required: true

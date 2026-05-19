@@ -1,0 +1,65 @@
+name: "Experiment"
+description: "検証・調査・技術選定・設計検討"
+title: "[Experiment] "
+labels: ["type: experiment"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: "検証したいこと"
+      placeholder: "例: UDP通信で十分に同期できるか検証する"
+    validations:
+      required: true
+
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: "仮説"
+      placeholder: "例: LAN内であればUDPの状態同期でプレイに支障は出にくい"
+    validations:
+      required: true
+
+  - type: textarea
+    id: method
+    attributes:
+      label: "検証方法"
+      placeholder: |
+        - 比較対象や確認条件を書く
+        - 実行手順を書く
+        - 成功/失敗の判断基準を書く
+    validations:
+      required: true
+
+  - type: textarea
+    id: data
+    attributes:
+      label: "使用データ・条件"
+      placeholder: |
+        - OS:
+        - Python:
+        - pygame:
+        - ネットワーク環境:
+    validations:
+      required: false
+
+  - type: textarea
+    id: metrics
+    attributes:
+      label: "評価指標"
+      placeholder: |
+        - FPS
+        - 遅延
+        - パケットロス
+        - 主観的な操作感
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: "成果物"
+      placeholder: |
+        - docs/experiments/xxx.md に結果を残す
+        - 次にやる改善案を書く
+    validations:
+      required: true

@@ -1,0 +1,45 @@
+name: "Docs"
+description: "README・仕様書・設計メモなどの整備"
+title: "[Docs] "
+labels: ["type: docs"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: "概要"
+      placeholder: "例: ローカル開発環境のセットアップ手順をREADMEに追加する"
+    validations:
+      required: true
+
+  - type: textarea
+    id: target
+    attributes:
+      label: "対象ドキュメント"
+      placeholder: |
+        - README.md
+        - docs/setup.md
+        - docs/architecture.md
+    validations:
+      required: true
+
+  - type: textarea
+    id: content
+    attributes:
+      label: "追加・修正する内容"
+      placeholder: |
+        - 必要な依存関係
+        - 起動手順
+        - よくあるエラー
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: "完了条件"
+      placeholder: |
+        - 手順通りに実行すれば環境構築できる
+        - 古い説明が削除されている
+        - コマンド例が動作する
+    validations:
+      required: true
