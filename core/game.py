@@ -1,47 +1,62 @@
-"""Base game loop shared by all modes."""
+"""Game 基底クラス。
+
+HostGame / ClientGame / SoloGame が共通で継承するメインループの枠組み。
+"""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Protocol
+import pygame as pg
 
-from .constants import FPS
-
-
-class Updatable(Protocol):
-    def update(self, dt: float) -> None: ...
+from .constants import COLOR_BG, FPS, SCREEN_HEIGHT, SCREEN_WIDTH
 
 
-class Drawable(Protocol):
-    def draw(self, surface: object) -> None: ...
-
-
-@dataclass
 class Game:
-    """Small base class for game modes.
+    """ゲームの基底クラス。共通のループ構造を提供する。"""
 
-    Pygame-specific setup should be added by subclasses when rendering is ready.
-    """
+    def __init__(self) -> None:
+        pg.init()
+        self._screen: pg.Surface = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self._clock: pg.time.Clock = pg.time.Clock()
+        self._running: bool = True
+        self._dt: float = 0.0
 
-    fps: int = FPS
-    running: bool = field(default=False, init=False)
+    def get_screen(self) -> pg.Surface:
+        """描画対象の Surface を返す。"""
+        return self._screen
+
+    def get_dt(self) -> float:
+        """直近フレームの経過秒数を返す。"""
+        return self._dt
+
+    def is_running(self) -> bool:
+        return self._running
+
+    def stop(self) -> None:
+        self._running = False
 
     def handle_events(self) -> None:
-        """Handle input and window events."""
+        """共通イベント処理。QUIT でループ終了。派生クラスはオーバーライド可。"""
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                self._running = False
 
     def update(self, dt: float) -> None:
-        """Advance simulation state."""
+        """1フレーム分の状態更新。派生クラスでオーバーライドする。"""
+        raise NotImplementedError
 
     def draw(self) -> None:
-        """Render the current frame."""
+        """1フレーム分の描画。派生クラスでオーバーライドする。"""
+        raise NotImplementedError
 
     def run(self) -> None:
-        """Run a minimal placeholder loop.
-
-        This intentionally avoids importing pygame until the real loop is added,
-        so tests and module imports work before dependencies are installed.
-        """
-        self.running = True
-        self.update(1.0 / self.fps)
-        self.draw()
-        self.running = False
+        """メインループ。"""
+        while self._running:
+            self._dt = self._clock.tick(FPS) / 1000.0
+            self.handle_events()
+            if not self._running:
+                break
+            self._screen.fill(COLOR_BG)
+            self.update(self._dt)
+            self.draw()
+            pg.display.flip()
+        pg.quit()

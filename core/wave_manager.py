@@ -1,23 +1,116 @@
-"""Wave progression."""
+"""ウェーブ進行管理。
+
+フェーズ：準備 → 戦闘 → 集計 を進めながら、ウェーブ番号に応じて敵をスポーン
+する。スポーン対象の敵クラスは外部から差し替えられるよう factory を受け取る。
+"""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import random
+from collections.abc import Callable
+from enum import Enum
+
+from .base_enemy import BaseEnemy
+from .world import World
 
 
-@dataclass
+class WavePhase(str, Enum):
+    """ウェーブのフェーズ。"""
+
+    PREPARE = "prepare"
+    BATTLE = "battle"
+    SUMMARY = "summary"
+
+
+EnemyFactory = Callable[[tuple[float, float]], BaseEnemy]
+
+
+def _default_enemy_factory(pos: tuple[float, float]) -> BaseEnemy:
+    return BaseEnemy(pos=pos)
+
+
 class WaveManager:
-    wave: int = 0
-    enemies_remaining: int = 0
+    """ウェーブ進行を司る。"""
 
-    def start_next_wave(self, enemy_count: int | None = None) -> int:
-        self.wave += 1
-        self.enemies_remaining = enemy_count if enemy_count is not None else 5 + self.wave * 2
-        return self.enemies_remaining
+    PREPARE_SECONDS: float = 3.0
+    SUMMARY_SECONDS: float = 2.0
+    BASE_SPAWN_COUNT: int = 5
+    SPAWN_INTERVAL: float = 0.8
 
-    def mark_enemy_defeated(self) -> None:
-        self.enemies_remaining = max(0, self.enemies_remaining - 1)
+    def __init__(
+        self,
+        enemy_factory: EnemyFactory | None = None,
+        max_wave: int = 3,
+    ) -> None:
+        self._wave: int = 0
+        self._max_wave: int = max_wave
+        self._phase: WavePhase = WavePhase.PREPARE
+        self._phase_timer: float = self.PREPARE_SECONDS
+        self._spawn_timer: float = 0.0
+        self._remaining_to_spawn: int = 0
+        self._factory: EnemyFactory = enemy_factory or _default_enemy_factory
 
-    @property
-    def wave_complete(self) -> bool:
-        return self.enemies_remaining == 0
+    # ----- accessors -----
+
+    def get_wave(self) -> int:
+        return self._wave
+
+    def get_max_wave(self) -> int:
+        return self._max_wave
+
+    def get_phase(self) -> WavePhase:
+        return self._phase
+
+    def get_remaining_to_spawn(self) -> int:
+        return self._remaining_to_spawn
+
+    def is_finished(self) -> bool:
+        """全ウェーブを完走した状態。"""
+        return self._wave >= self._max_wave and self._phase is WavePhase.SUMMARY
+
+    # ----- internal -----
+
+    def _enter_battle(self) -> None:
+        self._wave += 1
+        self._phase = WavePhase.BATTLE
+        self._remaining_to_spawn = self.BASE_SPAWN_COUNT + (self._wave - 1) * 2
+        self._spawn_timer = 0.0
+
+    def _enter_summary(self) -> None:
+        self._phase = WavePhase.SUMMARY
+        self._phase_timer = self.SUMMARY_SECONDS
+
+    def _enter_prepare(self) -> None:
+        self._phase = WavePhase.PREPARE
+        self._phase_timer = self.PREPARE_SECONDS
+
+    # ----- per-frame -----
+
+    def update(self, world: World, dt: float) -> None:
+        """フェーズに応じた進行処理。"""
+        if self._phase is WavePhase.PREPARE:
+            self._phase_timer -= dt
+            if self._phase_timer <= 0.0:
+                self._enter_battle()
+            return
+
+        if self._phase is WavePhase.BATTLE:
+            spawn_points = world.get_spawn_points()
+            if self._remaining_to_spawn > 0 and spawn_points:
+                self._spawn_timer -= dt
+                if self._spawn_timer <= 0.0:
+                    pos = random.choice(spawn_points)
+                    world.add_enemy(self._factory(pos))
+                    self._remaining_to_spawn -= 1
+                    self._spawn_timer = self.SPAWN_INTERVAL
+            if self._remaining_to_spawn == 0 and not world.get_enemies():
+                self._enter_summary()
+            return
+
+        if self._phase is WavePhase.SUMMARY:
+            self._phase_timer -= dt
+            if self._phase_timer <= 0.0:
+                if self._wave >= self._max_wave:
+                    # 完走。フェーズは SUMMARY のまま保持。
+                    return
+                self._enter_prepare()
