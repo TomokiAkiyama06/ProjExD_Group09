@@ -30,6 +30,50 @@ def test_neural_net_rejects_wrong_input_shape() -> None:
         raise AssertionError("NeuralNet.forward should reject wrong input shape")
 
 
+def test_neural_net_set_weights_matches_forward_result() -> None:
+    net = NeuralNet()
+    # b1/b2 に非ゼロ値を設定してバイアスのコピー漏れも検出できるようにする
+    w1, b1, w2, b2 = net.get_weights()
+    b1[:] = np.linspace(-0.5, 0.5, b1.shape[0])
+    b2[:] = np.linspace(-0.3, 0.3, b2.shape[0])
+    net.set_weights([w1, b1, w2, b2])
+
+    input_vec = np.linspace(0.0, 1.0, DEFAULT_INPUT_SIZE)
+    expected = net.forward(input_vec)
+
+    copied_net = NeuralNet()
+    weights = net.get_weights()
+    copied_net.set_weights(weights)
+    assert np.allclose(copied_net.forward(input_vec), expected)
+
+    # set_weights が defensive copy: 渡した配列を変更してもコピー先は影響を受けない
+    # w1[0, :] は input_vec[0]==0.0 に対応するため b1 を変更して確実に検出する
+    weights[1][0] += 999.0
+    assert np.allclose(copied_net.forward(input_vec), expected)
+
+    # get_weights が defensive copy: 返された配列を変更しても元のNNは影響を受けない
+    leaked = net.get_weights()
+    leaked[1][0] += 999.0
+    assert np.allclose(net.forward(input_vec), expected)
+
+
+def test_neural_net_clone_keeps_independent_weights() -> None:
+    net = NeuralNet()
+    cloned_net = net.clone()
+    original_weights = cloned_net.get_weights()
+
+    # set_weightsによる配列差し替えでなくin-place変更で浅いコピーバグも検出する
+    net.w1[0, 0] += 1.0
+    net.b1[0] += 1.0
+    net.w2[0, 0] += 1.0
+    net.b2[0] += 1.0
+
+    assert np.array_equal(cloned_net.w1, original_weights[0])
+    assert np.array_equal(cloned_net.b1, original_weights[1])
+    assert np.array_equal(cloned_net.w2, original_weights[2])
+    assert np.array_equal(cloned_net.b2, original_weights[3])
+
+
 def test_evolution_manager_uses_default_neural_net_shape() -> None:
     manager = EvolutionManager(population_size=2)
     assert manager.population[0].input_size == DEFAULT_INPUT_SIZE
