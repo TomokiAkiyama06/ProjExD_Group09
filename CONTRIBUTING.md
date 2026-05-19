@@ -163,6 +163,7 @@ Ruffを実行します。
 
 ```bash
 ruff check .
+ruff format . --check
 ```
 
 自動修正できるものを直す場合:
