@@ -1,0 +1,55 @@
+[project]
+name = "ex5"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+extend-exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "assets",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.ruff.lint]
+select = [
+    "A",      # Python組み込み名の上書き禁止
+    "ANN",    # 型ヒント必須
+    "ARG",    # 未使用引数
+    "B",      # バグになりやすい書き方
+    "C4",     # リスト内包表記などの改善
+    "D",      # docstring
+    "E",      # pycodestyle error
+    "F",      # pyflakes
+    "I",      # import順
+    "N",      # 命名規則
+    "PL",     # pylint系
+    "PTH",    # pathlib推奨
+    "RET",    # return文の整理
+    "RUF",    # Ruff独自ルール
+    "SIM",    # 単純化できるコード
+    "UP",     # 新しいPython記法
+    "W",      # pycodestyle warning
+]
+
+ignore = [
+    "D100", # モジュールdocstringまでは必須にしない
+    "D104", # package docstringまでは必須にしない
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"main.py" = ["E402"]
+"test_*.py" = ["D103"]
