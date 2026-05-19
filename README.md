@@ -7,6 +7,13 @@
 * python >= 3.10
 * pygame >= 2.1
 * numpy >= 1.24
+* Ruff（`requirements.txt` からインストール）
+
+依存関係は `requirements.txt` に統一しています。初回セットアップ時は以下を実行してください。
+
+```bash
+pip install -r requirements.txt
+```
 
 ## ゲームの概要
 
@@ -27,6 +34,21 @@ python main.py --client --ip=192.168.1.10
 
 # 1人プレイ（フォールバック・デバッグ用）
 python main.py --solo
+
+```
+
+## CI・品質チェック
+
+このリポジトリでは GitHub Actions によるCIを追加しています。`main` へのpush時と、`main` 向けPull Request作成・更新時に以下を実行します。
+
+* `ruff check . --output-format=github`
+* `ruff format . --check`
+
+Pull Requestを出す前に、ローカルでも以下を実行して確認してください。
+
+```bash
+ruff check .
+ruff format . --check
 ```
 
 ## 操作方法
