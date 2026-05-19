@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: quality checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Ruff lint
+        run: ruff check . --output-format=github
+
+      - name: Ruff format check
+        run: ruff format . --check
+
+      - name: Compile Python files
+        run: python -m compileall .
+
+      - name: Run simple test files
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import runpy
+
+          test_files = sorted(Path(".").rglob("test_*.py"))
+
+          if not test_files:
+              print("No test_*.py files found. Skipping simple test runner.")
+              raise SystemExit(0)
+
+          for path in test_files:
+              if any(part in {".venv", "venv", "__pycache__"} for part in path.parts):
+                  continue
+              print(f"Running {path}")
+              runpy.run_path(str(path), run_name="__main__")
+          PY
