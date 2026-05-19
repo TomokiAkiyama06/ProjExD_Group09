@@ -122,7 +122,7 @@ class World:
 
         for bullet in self._bullets:
             bullet.update(dt)
-            bullet.check_hit()
+            bullet.check_hit(self._enemies)
         self._bullets = [b for b in self._bullets if not b.is_consumed()]
 
     def draw(self, screen: pg.Surface) -> None:

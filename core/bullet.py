@@ -65,8 +65,14 @@ class Bullet:
         else:
             self._pos = (x + vx / dist * step, y + vy / dist * step)
 
-    def check_hit(self) -> bool:
-        """命中判定。命中したら対象にダメージを与え、True を返す。"""
+    def check_hit(self, enemies: list[BaseEnemy] | None = None) -> bool:
+        """命中判定。命中したら対象にダメージを与え、True を返す。
+
+        Args:
+            enemies: 周囲を巻き込む派生 Bullet（FireBullet 等）が利用する全敵リスト。
+                基底実装では使用しないが、World からは常に渡される。
+        """
+        _ = enemies
         if self._consumed:
             return False
         if self._target.is_dead():
