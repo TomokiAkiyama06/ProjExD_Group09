@@ -1,0 +1,59 @@
+name: "Bug"
+description: "不具合報告"
+title: "[Bug] "
+labels: ["type: bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: "不具合の概要"
+      placeholder: "例: 音声アップロード時に500エラーが発生する"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: "再現手順"
+      placeholder: |
+        1. mp3ファイルを選択する
+        2. アップロードボタンを押す
+        3. 500エラーが表示される
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "期待する挙動"
+      placeholder: "例: アップロードに成功し、分析が開始される"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: "実際の挙動"
+      placeholder: "例: APIが500を返し、画面には何も表示されない"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: "環境"
+      placeholder: |
+        - OS:
+        - Browser:
+        - Python:
+        - pygame:
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: "ログ・スクリーンショット"
+      placeholder: "ログや画像があれば貼る"
+    validations:
+      required: false
