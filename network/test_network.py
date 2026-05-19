@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from network.net_protocol import decode_message, encode_message
-from network.state_buffer import StateBuffer
+from .net_protocol import decode_message, encode_message
+from .state_buffer import StateBuffer
 
 
 def test_protocol_round_trip() -> None:
