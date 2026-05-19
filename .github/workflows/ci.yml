@@ -55,5 +55,12 @@ jobs:
               if any(part in {".venv", "venv", "__pycache__"} for part in path.parts):
                   continue
               print(f"Running {path}")
-              runpy.run_path(str(path), run_name="__main__")
+              namespace = runpy.run_path(str(path), run_name="__main__")
+              test_functions = [
+                  value
+                  for name, value in sorted(namespace.items())
+                  if name.startswith("test_") and callable(value)
+              ]
+              for test_function in test_functions:
+                  test_function()
           PY
