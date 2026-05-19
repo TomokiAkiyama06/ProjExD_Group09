@@ -29,7 +29,7 @@ class EvolutionManager:
         child = net.copy()
         for weights in (child.w1, child.b1, child.w2, child.b2):
             mask = np.random.random(weights.shape) < self.mutation_rate
-            weights += mask * np.random.normal(0.0, 0.1, weights.shape)
+            weights[...] += mask * np.random.normal(0.0, 0.1, weights.shape)
         return child
 
     def next_generation(self, fitness: list[float]) -> list[NeuralNet]:
@@ -40,7 +40,6 @@ class EvolutionManager:
         parent_count = max(1, len(order) // 3)
         parents = [self.population[index] for index in order[:parent_count]]
         self.population = [
-            self.mutate(parents[i % len(parents)])
-            for i in range(self.population_size)
+            self.mutate(parents[i % len(parents)]) for i in range(self.population_size)
         ]
         return self.population
