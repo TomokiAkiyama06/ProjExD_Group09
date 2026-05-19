@@ -109,7 +109,7 @@ class NetServer:
         self._errors: list[str] = []
 
         self._clients: dict[Address, PlayerInfo] = {}
-        self._next_player_id: int = 1
+        self._next_player_id: int = 2
         self._event_seq: int = 0
         self._pending: dict[int, _PendingEvent] = {}
         self._lock: threading.Lock = threading.Lock()
