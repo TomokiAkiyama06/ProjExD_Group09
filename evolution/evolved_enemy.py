@@ -27,4 +27,4 @@ class EvolvedEnemy(BaseEnemy):
 
     def decide(self, inputs: np.ndarray) -> np.ndarray:
         """現在の観測入力から移動方向ベクトルを決定する。"""
-        return self._brain.forward(inputs)
+        return self.brain.forward(inputs)
