@@ -17,7 +17,7 @@ import socket
 import threading
 import time
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from queue import Empty, Queue
 from typing import Any
 
@@ -61,6 +61,13 @@ from .net_protocol import (
 Address = tuple[str, int]
 
 
+def _to_int(value: object) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 @dataclass
 class PlayerInfo:
     """接続中クライアントの情報。"""
@@ -70,6 +77,7 @@ class PlayerInfo:
     address: Address
     last_seen: float = 0.0
     last_seq: int = 0
+    seen_event_seqs: set[int] = field(default_factory=set)
 
 
 @dataclass
@@ -168,7 +176,7 @@ class NetServer:
                 continue
             self._handle_packet(payload, address)
 
-    def _handle_packet(self, payload: bytes, address: Address) -> None:
+    def _handle_packet(self, payload: bytes, address: Address) -> None:  # noqa: PLR0911, PLR0912 - 種別ごとの早期 return で受信処理を分ける
         msg = deserialize(payload)
         if not msg:
             return
@@ -186,18 +194,32 @@ class NetServer:
 
         # 接続済みクライアントからの input / event はメインスレッドへ
         now = time.monotonic()
+        ack_event_seq: int | None = None
+        should_enqueue = True
         with self._lock:
             client = self._clients.get(address)
             if client is None:
                 return
             client.last_seen = now
             if msg_type == MSG_INPUT:
-                seq = int(msg.get("seq", -1))
+                seq = _to_int(msg.get("seq", -1))
+                if seq is None:
+                    return
                 if seq <= client.last_seq:
                     return
                 client.last_seq = seq
-        if msg_type == MSG_EVENT and bool(msg.get("ack_required", False)):
-            self._send_raw(make_ack(int(msg.get("seq", 0))), address)
+            elif msg_type == MSG_EVENT and bool(msg.get("ack_required", False)):
+                ack_event_seq = _to_int(msg.get("seq", -1))
+                if ack_event_seq is None:
+                    return
+                if ack_event_seq in client.seen_event_seqs:
+                    should_enqueue = False
+                else:
+                    client.seen_event_seqs.add(ack_event_seq)
+        if ack_event_seq is not None:
+            self._send_raw(make_ack(ack_event_seq), address)
+            if not should_enqueue:
+                return
 
         self._inbox.put((address, msg))
 
@@ -223,7 +245,9 @@ class NetServer:
 
     def _handle_ping(self, address: Address, msg: dict[str, Any]) -> None:
         now = time.monotonic()
-        seq = int(msg.get("seq", 0))
+        seq = _to_int(msg.get("seq", 0))
+        if seq is None:
+            return
         with self._lock:
             client = self._clients.get(address)
             if client is not None:
@@ -231,7 +255,9 @@ class NetServer:
         self._send_raw(make_pong(seq), address)
 
     def _handle_ack(self, address: Address, msg: dict[str, Any]) -> None:
-        seq = int(msg.get("seq", -1))
+        seq = _to_int(msg.get("seq", -1))
+        if seq is None:
+            return
         with self._lock:
             pending = self._pending.get(seq)
             if pending is None:

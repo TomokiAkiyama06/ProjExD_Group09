@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
+from typing import Any
 
 from network.net_client import NetClient
 from network.net_protocol import (
@@ -266,6 +267,91 @@ def test_server_registers_pending_before_sending_event() -> None:
     assert seq not in server._pending
 
 
+def test_client_registers_pending_before_sending_event() -> None:
+    client = NetClient()
+    sent: list[int] = []
+
+    def _ack_immediately(msg: dict[str, Any]) -> bool:
+        seq = int(msg["seq"])
+        assert seq in client._pending
+        client._handle_packet(serialize(make_ack(seq)))
+        sent.append(seq)
+        return True
+
+    client._send_raw = _ack_immediately  # type: ignore[method-assign]
+    seq = client.send_event("send_enemy", ack_required=True)
+
+    assert sent == [seq]
+    assert seq not in client._pending
+
+
+def test_server_deduplicates_retried_client_events_but_acks_each_time() -> None:
+    server = NetServer()
+    addr = ("127.0.0.1", 10001)
+    server._clients[addr] = PlayerInfo(player_id=1, name="p1", address=addr)
+    acks: list[tuple[tuple[str, int], dict[str, Any]]] = []
+
+    def _capture_ack(msg: dict[str, Any], address: tuple[str, int]) -> bool:
+        acks.append((address, msg))
+        return True
+
+    server._send_raw = _capture_ack  # type: ignore[method-assign]
+    payload = serialize(make_event(4, "send_enemy", {"kind": "fast"}, ack_required=True))
+
+    server._handle_packet(payload, addr)
+    server._handle_packet(payload, addr)
+
+    messages = server.poll_messages()
+    assert len(messages) == 1
+    assert messages[0][1]["event"] == "send_enemy"
+    assert acks == [(addr, make_ack(4)), (addr, make_ack(4))]
+
+
+def test_client_deduplicates_retried_server_events_but_acks_each_time() -> None:
+    client = NetClient()
+    acks: list[dict[str, Any]] = []
+
+    def _capture_ack(msg: dict[str, Any]) -> bool:
+        acks.append(msg)
+        return True
+
+    client._send_raw = _capture_ack  # type: ignore[method-assign]
+    payload = serialize(make_event(5, "tower_placed", {"x": 1}, ack_required=True))
+
+    client._handle_packet(payload)
+    client._handle_packet(payload)
+
+    events = client.poll_events()
+    assert len(events) == 1
+    assert events[0]["event"] == "tower_placed"
+    assert acks == [make_ack(5), make_ack(5)]
+
+
+def test_server_ignores_bad_ping_seq_without_crashing() -> None:
+    server = NetServer()
+    addr = ("127.0.0.1", 10001)
+    sent: list[tuple[tuple[str, int], dict[str, Any]]] = []
+
+    def _capture_send(msg: dict[str, Any], address: tuple[str, int]) -> bool:
+        sent.append((address, msg))
+        return True
+
+    server._send_raw = _capture_send  # type: ignore[method-assign]
+    server._handle_packet(serialize({"type": "ping", "seq": "bad"}), addr)
+
+    assert sent == []
+
+
+def test_client_resets_lost_connection_on_connect_ok() -> None:
+    client = NetClient()
+    client._lost_connection = True
+
+    client._handle_packet(serialize(make_connect_ok(2)))
+
+    assert client.is_connected()
+    assert not client.has_lost_connection()
+
+
 if __name__ == "__main__":
     test_protocol_round_trip()
     test_serialize_round_trip()
@@ -282,4 +368,9 @@ if __name__ == "__main__":
     test_server_rejects_messages_from_unconnected_address()
     test_server_discards_stale_input_seq()
     test_server_registers_pending_before_sending_event()
+    test_client_registers_pending_before_sending_event()
+    test_server_deduplicates_retried_client_events_but_acks_each_time()
+    test_client_deduplicates_retried_server_events_but_acks_each_time()
+    test_server_ignores_bad_ping_seq_without_crashing()
+    test_client_resets_lost_connection_on_connect_ok()
     print("All network tests passed.")

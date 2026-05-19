@@ -59,6 +59,13 @@ from .net_protocol import (
 Address = tuple[str, int]
 
 
+def _to_int(value: object) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 @dataclass
 class _PendingEvent:
     """ACK 待ちイベント。"""
@@ -94,6 +101,7 @@ class NetClient:
         self._input_seq: int = 0
         self._event_seq: int = 0
         self._pending: dict[int, _PendingEvent] = {}
+        self._received_event_seqs: set[int] = set()
 
         self._latest_state: dict[str, Any] | None = None
         self._latest_state_time: float = 0.0
@@ -139,6 +147,7 @@ class NetClient:
         if self._sock is None:
             self.start()
         self._connected.clear()
+        self._lost_connection = False
         msg = make_connect(self._name)
         self._send_raw(msg)
         ok = self._connected.wait(timeout=timeout)
@@ -169,7 +178,6 @@ class NetClient:
             seq = self._event_seq
         msg = make_event(seq, event_name, data, ack_required=ack_required)
         payload = encode_message(msg)
-        self._send_raw(msg)
         if ack_required:
             now = time.monotonic()
             with self._lock:
@@ -179,6 +187,10 @@ class NetClient:
                     retries=0,
                     last_sent_at=now,
                 )
+        sent = self._send_raw(msg)
+        if ack_required and not sent:
+            with self._lock:
+                self._pending.pop(seq, None)
         return seq
 
     def poll_state(self) -> dict[str, Any] | None:
@@ -292,7 +304,7 @@ class NetClient:
                 continue
             self._handle_packet(payload)
 
-    def _handle_packet(self, payload: bytes) -> None:  # noqa: PLR0911 - 受信メッセージ種別ごとの early return で見通しを保つ
+    def _handle_packet(self, payload: bytes) -> None:  # noqa: PLR0911, PLR0912 - 受信メッセージ種別ごとの early return で見通しを保つ
         msg = deserialize(payload)
         if not msg:
             return
@@ -301,11 +313,17 @@ class NetClient:
         self._last_seen = now
 
         if msg_type == MSG_CONNECT_OK:
-            self._player_id = int(msg.get("player_id", 0))
+            player_id = _to_int(msg.get("player_id", 0))
+            if player_id is None or player_id <= 0:
+                return
+            self._player_id = player_id
+            self._lost_connection = False
             self._connected.set()
             return
         if msg_type == MSG_STATE:
-            seq = int(msg.get("seq", 0))
+            seq = _to_int(msg.get("seq", 0))
+            if seq is None:
+                return
             with self._lock:
                 # 古い seq は破棄（パケット並べ替え対策）
                 if seq < self._latest_state_seq:
@@ -317,13 +335,22 @@ class NetClient:
         if msg_type == MSG_PONG:
             return  # last_seen 更新済み
         if msg_type == MSG_EVENT:
+            seq = _to_int(msg.get("seq", -1))
+            if seq is None:
+                return
             ack_required = bool(msg.get("ack_required", False))
             if ack_required:
-                self._send_raw(make_ack(int(msg.get("seq", 0))))
+                self._send_raw(make_ack(seq))
+                with self._lock:
+                    if seq in self._received_event_seqs:
+                        return
+                    self._received_event_seqs.add(seq)
             self._events_inbox.put(msg)
             return
         if msg_type == MSG_ACK:
-            seq = int(msg.get("seq", -1))
+            seq = _to_int(msg.get("seq", -1))
+            if seq is None:
+                return
             with self._lock:
                 self._pending.pop(seq, None)
             return
