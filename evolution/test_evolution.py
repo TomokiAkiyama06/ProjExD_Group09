@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import numpy as np
 
+from core.constants import (
+    FITNESS_DAMAGE_WEIGHT,
+    FITNESS_DISTANCE_WEIGHT,
+    FITNESS_SURVIVAL_WEIGHT,
+)
 from evolution.evolution_manager import EvolutionManager
 from evolution.neural_net import DEFAULT_INPUT_SIZE, DEFAULT_OUTPUT_SIZE, NeuralNet
 
@@ -84,3 +89,18 @@ def test_next_generation_keeps_population_size() -> None:
     manager = EvolutionManager(population_size=6)
     generation = manager.next_generation([1, 2, 3, 4, 5, 6])
     assert len(generation) == 6
+
+
+def test_calc_fitness_uses_enemy_record_values() -> None:
+    manager = EvolutionManager(population_size=1)
+    enemy_record = {
+        "damage_dealt": 3,
+        "survival_time": 20,
+        "distance_improvement": 4,
+    }
+    expected = (
+        enemy_record["damage_dealt"] * FITNESS_DAMAGE_WEIGHT
+        + enemy_record["survival_time"] * FITNESS_SURVIVAL_WEIGHT
+        + enemy_record["distance_improvement"] * FITNESS_DISTANCE_WEIGHT
+    )
+    assert manager.calc_fitness(enemy_record) == expected

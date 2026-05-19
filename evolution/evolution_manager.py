@@ -6,6 +6,12 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+from core.constants import (
+    FITNESS_DAMAGE_WEIGHT,
+    FITNESS_DISTANCE_WEIGHT,
+    FITNESS_SURVIVAL_WEIGHT,
+)
+
 from .neural_net import DEFAULT_HIDDEN_SIZE, DEFAULT_INPUT_SIZE, DEFAULT_OUTPUT_SIZE, NeuralNet
 
 
@@ -35,6 +41,25 @@ class EvolutionManager:
             mask = np.random.random(weights.shape) < self.mutation_rate
             weights[...] += mask * np.random.normal(0.0, 0.1, weights.shape)
         return child
+
+    def calc_fitness(self, enemy_record: dict[str, float | int]) -> float:
+        """1個体の記録から適応度を計算する。
+
+        Args:
+            enemy_record: 敵1体の戦績。``damage_dealt``、``survival_time``、
+                ``distance_improvement`` を含む辞書
+
+        Returns:
+            ダメージ・生存時間・距離改善量を重み付き合算した適応度
+        """
+        damage_dealt = float(enemy_record["damage_dealt"])
+        survival_time = float(enemy_record["survival_time"])
+        distance_improvement = float(enemy_record["distance_improvement"])
+        return (
+            damage_dealt * FITNESS_DAMAGE_WEIGHT
+            + survival_time * FITNESS_SURVIVAL_WEIGHT
+            + distance_improvement * FITNESS_DISTANCE_WEIGHT
+        )
 
     def next_generation(self, fitness: list[float]) -> list[NeuralNet]:
         """適応度の高い個体を親として次世代を生成する。"""
