@@ -39,7 +39,9 @@ SERVER_HOST: str = "127.0.0.1"
 SERVER_PORT: int = 50000
 
 # ===== 進化AI（担当①） =====
-# 担当①が記述
+FITNESS_DAMAGE_WEIGHT: float = 10.0
+FITNESS_SURVIVAL_WEIGHT: float = 1.0
+FITNESS_DISTANCE_WEIGHT: float = 5.0
 
 # ===== ネットワーク（担当②） =====
 NET_STATE_HZ: int = 20  # ホスト→クライアントの状態ブロードキャスト周波数
