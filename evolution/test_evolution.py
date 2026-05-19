@@ -47,12 +47,13 @@ def test_neural_net_set_weights_matches_forward_result() -> None:
     assert np.allclose(copied_net.forward(input_vec), expected)
 
     # set_weights が defensive copy: 渡した配列を変更してもコピー先は影響を受けない
-    weights[0][0, 0] += 999.0
+    # w1[0, :] は input_vec[0]==0.0 に対応するため b1 を変更して確実に検出する
+    weights[1][0] += 999.0
     assert np.allclose(copied_net.forward(input_vec), expected)
 
     # get_weights が defensive copy: 返された配列を変更しても元のNNは影響を受けない
     leaked = net.get_weights()
-    leaked[0][0, 0] += 999.0
+    leaked[1][0] += 999.0
     assert np.allclose(net.forward(input_vec), expected)
 
 
