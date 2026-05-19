@@ -113,5 +113,7 @@ class NeuralNet:
     @staticmethod
     def _validate_layer_size(name: str, value: int) -> None:
         """層サイズが正の整数であることを検証する。"""
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise TypeError(f"{name} must be an int, got {type(value).__name__}")
         if value < 1:
             raise ValueError(f"{name} must be greater than 0")
