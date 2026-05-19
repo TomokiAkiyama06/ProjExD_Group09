@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from core.constants import (
+    EVOLUTION_ELITE_RATE,
+    EVOLUTION_TOURNAMENT_SIZE,
     FITNESS_DAMAGE_WEIGHT,
     FITNESS_DISTANCE_WEIGHT,
     FITNESS_SURVIVAL_WEIGHT,
@@ -61,6 +63,66 @@ class EvolutionManager:
             + distance_improvement * FITNESS_DISTANCE_WEIGHT
         )
 
+    def select_elites(
+        self,
+        population: list[NeuralNet],
+        fitness_list: list[float],
+        n_elite: int | None = None,
+    ) -> list[NeuralNet]:
+        """適応度が高い上位個体をエリートとして返す。
+
+        Args:
+            population: 選択対象のNN個体群
+            fitness_list: 各個体に対応する適応度
+            n_elite: 返すエリート数。未指定なら定数の割合から計算する
+
+        Returns:
+            適応度降順で並んだエリート個体のリスト
+
+        Raises:
+            ValueError: 個体群と適応度の長さが一致しない場合
+        """
+        self._validate_selection_inputs(population, fitness_list)
+        elite_count = n_elite
+        if elite_count is None:
+            elite_count = int(len(population) * EVOLUTION_ELITE_RATE)
+        elite_count = max(0, min(elite_count, len(population)))
+
+        order = np.argsort(fitness_list)[::-1]
+        return [population[index] for index in order[:elite_count]]
+
+    def tournament_select(
+        self,
+        population: list[NeuralNet],
+        fitness_list: list[float],
+        k: int = EVOLUTION_TOURNAMENT_SIZE,
+    ) -> NeuralNet:
+        """ランダムに抽出した候補の中で最も適応度が高い個体を返す。
+
+        Args:
+            population: 選択対象のNN個体群
+            fitness_list: 各個体に対応する適応度
+            k: トーナメントに参加させる個体数
+
+        Returns:
+            抽出候補の中で最高適応度の個体
+
+        Raises:
+            ValueError: 個体群と適応度の長さが一致しない場合、またはkが1未満の場合
+        """
+        self._validate_selection_inputs(population, fitness_list)
+        if k < 1:
+            raise ValueError("k must be greater than 0")
+
+        tournament_size = min(k, len(population))
+        candidate_indexes = np.random.choice(
+            len(population),
+            size=tournament_size,
+            replace=False,
+        )
+        best_index = max(candidate_indexes, key=lambda index: fitness_list[int(index)])
+        return population[int(best_index)]
+
     def next_generation(self, fitness: list[float]) -> list[NeuralNet]:
         """適応度の高い個体を親として次世代を生成する。"""
         if len(fitness) != len(self.population):
@@ -73,3 +135,14 @@ class EvolutionManager:
             self.mutate(parents[i % len(parents)]) for i in range(self.population_size)
         ]
         return self.population
+
+    @staticmethod
+    def _validate_selection_inputs(
+        population: list[NeuralNet],
+        fitness_list: list[float],
+    ) -> None:
+        """選択処理に使う個体群と適応度リストを検証する。"""
+        if not population:
+            raise ValueError("population must not be empty")
+        if len(population) != len(fitness_list):
+            raise ValueError("fitness_list length must match population length")
