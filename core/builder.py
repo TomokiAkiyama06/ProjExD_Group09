@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import ClassVar
 
 import pygame as pg
@@ -15,6 +16,8 @@ from .base_player import BasePlayer
 from .base_tower import BaseTower
 from .constants import COLOR_PLAYER, INITIAL_GOLD
 from .world import World
+
+TowerFactory = Callable[..., BaseTower]
 
 
 class Builder(BasePlayer):
@@ -35,6 +38,7 @@ class Builder(BasePlayer):
         pos: tuple[float, float] | None = None,
         gold: int = INITIAL_GOLD,
         tower_cost: int = DEFAULT_TOWER_COST,
+        tower_factories: dict[str, TowerFactory] | None = None,
     ) -> None:
         super().__init__(player_id=1, pos=pos)
         self._gold: int = max(0, gold)
@@ -42,6 +46,8 @@ class Builder(BasePlayer):
         self._selected_tower_type: str = self.TOWER_TYPES[0]
         self._wave_skip_requested: bool = False
         self._selected_tower: BaseTower | None = None
+        # 属性タワーのファクトリ。未指定の属性は BaseTower にフォールバック。
+        self._tower_factories: dict[str, TowerFactory] = dict(tower_factories or {})
 
     # ----- accessors -----
 
@@ -92,9 +98,9 @@ class Builder(BasePlayer):
             return False
         if not world.can_place_tower(fpos):
             return False
-        # 属性タワーは担当③で実装するため、ここでは基底のタワーを設置する。
-        # 属性は _selected_tower_type に保持しておき、後続で差し替え可能。
-        world.add_tower(BaseTower(pos=fpos))
+        factory = self._tower_factories.get(self._selected_tower_type, BaseTower)
+        tower = factory(pos=fpos, purchase_cost=self._tower_cost)
+        world.add_tower(tower)
         self._gold -= self._tower_cost
         return True
 

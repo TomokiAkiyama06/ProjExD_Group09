@@ -24,8 +24,23 @@ def run_client(ip: str) -> None:
 def run_solo() -> None:
     """1台2プレイヤーのフォールバックモード。"""
     from core.solo_game import SoloGame
+    from towers import (
+        FireTower,
+        IceTower,
+        LightningTower,
+        PhysicalTower,
+        TowerSelectorUI,
+    )
 
-    game = SoloGame()
+    game = SoloGame(
+        tower_factories={
+            "fire": FireTower,
+            "ice": IceTower,
+            "lightning": LightningTower,
+            "physical": PhysicalTower,
+        },
+        tower_selector=TowerSelectorUI(),
+    )
     game.run()
 
 

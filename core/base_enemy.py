@@ -36,6 +36,9 @@ class BaseEnemy:
         self._damage: int = damage
         self._reward: int = max(0, reward)
         self._reached: bool = False
+        # 速度低下バフ（担当③の氷タワー等で利用）
+        self._speed_factor: float = 1.0
+        self._slow_remaining: float = 0.0
 
     @property
     def reward(self) -> int:
@@ -72,6 +75,29 @@ class BaseEnemy:
     def set_speed(self, value: float) -> None:
         self._speed = max(0.0, value)
 
+    def get_effective_speed(self) -> float:
+        """現在の slow バフを反映した実効速度。"""
+        return self._speed * self._speed_factor
+
+    def get_speed_factor(self) -> float:
+        return self._speed_factor
+
+    def get_slow_remaining(self) -> float:
+        return self._slow_remaining
+
+    def apply_slow(self, factor: float, duration: float) -> None:
+        """速度低下バフを適用する。
+
+        既に slow 中の場合は、より強い factor を採用しつつ、残り duration は長い方を採る。
+        """
+        factor = max(0.0, min(1.0, float(factor)))
+        duration = max(0.0, float(duration))
+        if duration <= 0.0:
+            return
+        # より強い slow を優先（factor が小さいほど遅い）
+        self._speed_factor = min(self._speed_factor, factor)
+        self._slow_remaining = max(self._slow_remaining, duration)
+
     def has_reached_fortress(self) -> bool:
         return self._reached
 
@@ -85,6 +111,12 @@ class BaseEnemy:
 
     def update(self, fortress: Fortress, dt: float = 1.0 / 60.0) -> None:
         """拠点方向へ直進移動し、接触時にダメージを与える。"""
+        # slow バフのタイマーを進める
+        if self._slow_remaining > 0.0:
+            self._slow_remaining = max(0.0, self._slow_remaining - dt)
+            if self._slow_remaining == 0.0:
+                self._speed_factor = 1.0
+
         if self._reached or self.is_dead():
             return
         fx, fy = fortress.get_pos()
@@ -95,7 +127,7 @@ class BaseEnemy:
             fortress.take_damage(self._damage)
             self._reached = True
             return
-        step = self._speed * dt
+        step = self.get_effective_speed() * dt
         if step >= dist - self.CONTACT_DISTANCE:
             fortress.take_damage(self._damage)
             self._reached = True

@@ -26,13 +26,14 @@ class BaseTower:
     DEFAULT_RADIUS: int = 16
     RANGE_RING_ALPHA: int = 40
 
-    def __init__(
+    def __init__(  # noqa: PLR0913 - タワー初期化に必要なパラメータをすべて kwarg 化するため許容
         self,
         pos: tuple[float, float] = (0.0, 0.0),
         range_: float = TOWER_BASE_RANGE,
         damage: int = TOWER_BASE_DAMAGE,
         cooldown: float | None = None,
         fire_cooldown: float | None = None,
+        purchase_cost: int = 0,
     ) -> None:
         if cooldown is None:
             cooldown = fire_cooldown if fire_cooldown is not None else TOWER_BASE_COOLDOWN
@@ -41,6 +42,9 @@ class BaseTower:
         self._damage: int = damage
         self._cooldown: float = cooldown
         self._last_shot_tick: float = -cooldown  # 起動直後から撃てるように
+        # アップグレードシステム用（担当③）
+        self._level: int = 1
+        self._total_invested: int = max(0, int(purchase_cost))
 
     @property
     def damage(self) -> int:
@@ -97,6 +101,20 @@ class BaseTower:
 
     def set_cooldown(self, value: float) -> None:
         self._cooldown = max(0.0, value)
+
+    # --- upgrade hooks (担当③) ---
+
+    def get_level(self) -> int:
+        return self._level
+
+    def set_level(self, value: int) -> None:
+        self._level = max(1, int(value))
+
+    def get_total_invested(self) -> int:
+        return self._total_invested
+
+    def add_invested(self, amount: int) -> None:
+        self._total_invested = max(0, self._total_invested + int(amount))
 
     def find_target(self, enemies: list[BaseEnemy]) -> BaseEnemy | None:
         """射程内で最も拠点に近い（=自分から遠くで先頭の）敵を選ぶ単純戦略。
