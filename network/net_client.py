@@ -361,15 +361,22 @@ class NetClient:
 
     # ----- backward-compat thin API -----
 
+    def _ensure_socket(self) -> None:
+        """同期 API 用: 受信スレッドを起動せずソケットだけ初期化する。"""
+        if self._sock is None:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.bind(("", 0))
+            self._sock = sock
+
     def send(self, message: dict[str, Any]) -> None:
         """単発送信（既存 API 互換）。"""
+        self._ensure_socket()
         self._send_raw(message)
 
     def receive(self, max_bytes: int = NET_RECV_BUFFER_BYTES) -> dict[str, Any]:
         """同期受信（既存 API 互換）。"""
-        if self._sock is None:
-            raise RuntimeError("client is not started")
-        payload, _ = self._sock.recvfrom(max_bytes)
+        self._ensure_socket()
+        payload, _ = self._sock.recvfrom(max_bytes)  # type: ignore[union-attr]
         return decode_message(payload)
 
     def close(self) -> None:
