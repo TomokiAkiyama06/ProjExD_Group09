@@ -1,0 +1,135 @@
+"""建築役（プレイヤー1）。
+
+マウス左クリックでタワー設置、数字キー1〜4で設置するタワー種類を切替、
+スペースキーで次ウェーブを早期開始リクエストする。マウス右クリックは
+タワー選択UIの起点となる（中身は担当③が実装する想定）。
+"""
+
+from __future__ import annotations
+
+from typing import ClassVar
+
+import pygame as pg
+
+from .base_player import BasePlayer
+from .base_tower import BaseTower
+from .constants import COLOR_PLAYER, INITIAL_GOLD
+from .world import World
+
+
+class Builder(BasePlayer):
+    """建築役プレイヤー。"""
+
+    DEFAULT_TOWER_COST: int = 30
+    DEFAULT_RADIUS: int = 12
+    TOWER_TYPES: ClassVar[tuple[str, ...]] = ("fire", "ice", "lightning", "physical")
+    TOWER_TYPE_KEYS: ClassVar[dict[int, str]] = {
+        pg.K_1: "fire",
+        pg.K_2: "ice",
+        pg.K_3: "lightning",
+        pg.K_4: "physical",
+    }
+
+    def __init__(
+        self,
+        pos: tuple[float, float] | None = None,
+        gold: int = INITIAL_GOLD,
+        tower_cost: int = DEFAULT_TOWER_COST,
+    ) -> None:
+        super().__init__(player_id=1, pos=pos)
+        self._gold: int = max(0, gold)
+        self._tower_cost: int = max(0, tower_cost)
+        self._selected_tower_type: str = self.TOWER_TYPES[0]
+        self._wave_skip_requested: bool = False
+        self._selected_tower: BaseTower | None = None
+
+    # ----- accessors -----
+
+    def get_gold(self) -> int:
+        return self._gold
+
+    def set_gold(self, value: int) -> None:
+        self._gold = max(0, value)
+
+    def get_selected_tower_type(self) -> str:
+        return self._selected_tower_type
+
+    def get_selected_tower(self) -> BaseTower | None:
+        return self._selected_tower
+
+    def get_tower_cost(self) -> int:
+        return self._tower_cost
+
+    # ----- input -----
+
+    def handle_event(self, event: pg.event.Event, world: World) -> None:
+        """単発イベント（クリック・キー押下）を処理する。"""
+        if event.type == pg.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                self._try_place_tower(world, pg.mouse.get_pos())
+            elif event.button == 3:
+                self._select_tower_at(world, pg.mouse.get_pos())
+            return
+
+        if event.type == pg.KEYDOWN:
+            if event.key in self.TOWER_TYPE_KEYS:
+                self._selected_tower_type = self.TOWER_TYPE_KEYS[event.key]
+            elif event.key == pg.K_SPACE:
+                self._wave_skip_requested = True
+
+    def consume_wave_skip(self) -> bool:
+        """ウェーブ早期開始リクエストを取り出して消費する。"""
+        if not self._wave_skip_requested:
+            return False
+        self._wave_skip_requested = False
+        return True
+
+    # ----- internal helpers -----
+
+    def _try_place_tower(self, world: World, pos: tuple[int, int]) -> bool:
+        fpos = (float(pos[0]), float(pos[1]))
+        if self._gold < self._tower_cost:
+            return False
+        if not world.can_place_tower(fpos):
+            return False
+        # 属性タワーは担当③で実装するため、ここでは基底のタワーを設置する。
+        # 属性は _selected_tower_type に保持しておき、後続で差し替え可能。
+        world.add_tower(BaseTower(pos=fpos))
+        self._gold -= self._tower_cost
+        return True
+
+    def _select_tower_at(self, world: World, pos: tuple[int, int]) -> None:
+        x, y = float(pos[0]), float(pos[1])
+        nearest: BaseTower | None = None
+        nearest_dist = float("inf")
+        for tower in world.get_towers():
+            tx, ty = tower.get_pos()
+            d = (tx - x) ** 2 + (ty - y) ** 2
+            if d < nearest_dist:
+                nearest_dist = d
+                nearest = tower
+        # 近接判定（半径 24 以内）
+        if nearest is not None and nearest_dist <= 24.0 * 24.0:
+            self._selected_tower = nearest
+        else:
+            self._selected_tower = None
+
+    # ----- per-frame -----
+
+    def update(self, input_state: dict) -> None:
+        """建築役は基本的に移動しない。インタフェース整合のための no-op。"""
+        _ = input_state
+
+    def draw(self, screen: pg.Surface) -> None:
+        x, y = int(self._pos[0]), int(self._pos[1])
+        pg.draw.rect(
+            screen,
+            COLOR_PLAYER,
+            (
+                x - self.DEFAULT_RADIUS,
+                y - self.DEFAULT_RADIUS,
+                self.DEFAULT_RADIUS * 2,
+                self.DEFAULT_RADIUS * 2,
+            ),
+            width=2,
+        )
