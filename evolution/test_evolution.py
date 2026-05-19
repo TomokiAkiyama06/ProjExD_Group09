@@ -59,14 +59,18 @@ def test_neural_net_set_weights_matches_forward_result() -> None:
 def test_neural_net_clone_keeps_independent_weights() -> None:
     net = NeuralNet()
     cloned_net = net.clone()
-    cloned_weights = cloned_net.get_weights()
+    original_weights = cloned_net.get_weights()
 
-    changed_weights = net.get_weights()
-    changed_weights[0][0, 0] += 1.0
-    net.set_weights(changed_weights)
+    # set_weightsによる配列差し替えでなくin-place変更で浅いコピーバグも検出する
+    net.w1[0, 0] += 1.0
+    net.b1[0] += 1.0
+    net.w2[0, 0] += 1.0
+    net.b2[0] += 1.0
 
-    assert not np.array_equal(cloned_net.w1, net.w1)
-    assert np.array_equal(cloned_net.w1, cloned_weights[0])
+    assert np.array_equal(cloned_net.w1, original_weights[0])
+    assert np.array_equal(cloned_net.b1, original_weights[1])
+    assert np.array_equal(cloned_net.w2, original_weights[2])
+    assert np.array_equal(cloned_net.b2, original_weights[3])
 
 
 def test_evolution_manager_uses_default_neural_net_shape() -> None:
