@@ -1,0 +1,58 @@
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+extend-exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "assets",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.ruff.lint]
+select = [
+    "A",      # Python組み込み名の上書き禁止
+    "ANN",    # 型ヒント必須
+    "ARG",    # 未使用引数
+    "B",      # バグになりやすい書き方
+    "C4",     # リスト内包表記などの改善
+    "D",      # docstring
+    "E",      # pycodestyle error
+    "F",      # pyflakes
+    "I",      # import順
+    "N",      # 命名規則
+    "PL",     # pylint系
+    "PTH",    # pathlib推奨
+    "RET",    # return文の整理
+    "RUF",    # Ruff独自ルール
+    "SIM",    # 単純化できるコード
+    "UP",     # 新しいPython記法
+    "W",      # pycodestyle warning
+]
+
+ignore = [
+    "D100",   # モジュールdocstringまでは必須にしない
+    "D101",   # 既存クラスのdocstringは段階的に追加する
+    "D102",   # 既存メソッドのdocstringは段階的に追加する
+    "D103",   # 既存関数のdocstringは段階的に追加する
+    "D104",   # package docstringまでは必須にしない
+    "D105",   # magic methodのdocstringは必須にしない
+    "D107",   # __init__のdocstringはクラスdocstringへ寄せる
+    "D415",   # 日本語docstring末尾の句点スタイルは縛らない
+    "PLR2004", # 小規模テストやスクリプトの数値定数化は段階的に行う
+    "RUF001",  # 日本語UI文字列の全角記号を許可する
+    "RUF002",  # 日本語docstringの全角記号を許可する
+    "RUF003",  # 日本語コメントの全角記号を許可する
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"main.py" = ["E402", "PTH100", "PTH120", "PLC0415"]
+"test_*.py" = ["D103"]
