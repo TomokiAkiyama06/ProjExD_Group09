@@ -25,7 +25,7 @@ class NeuralNet:
         hidden = np.tanh(x @ self.w1 + self.b1)
         return np.tanh(hidden @ self.w2 + self.b2)
 
-    def copy(self) -> NeuralNet:
+    def copy(self) -> "NeuralNet":
         clone = NeuralNet(self.input_size, self.hidden_size, self.output_size)
         clone.w1 = self.w1.copy()
         clone.b1 = self.b1.copy()
