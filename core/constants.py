@@ -42,6 +42,8 @@ SERVER_PORT: int = 50000
 FITNESS_DAMAGE_WEIGHT: float = 10.0
 FITNESS_SURVIVAL_WEIGHT: float = 1.0
 FITNESS_DISTANCE_WEIGHT: float = 5.0
+EVOLUTION_ELITE_RATE: float = 0.2
+EVOLUTION_TOURNAMENT_SIZE: int = 3
 
 # ===== ネットワーク（担当②） =====
 NET_STATE_HZ: int = 20  # ホスト→クライアントの状態ブロードキャスト周波数

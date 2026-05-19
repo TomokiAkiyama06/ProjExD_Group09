@@ -5,6 +5,8 @@ from __future__ import annotations
 import numpy as np
 
 from core.constants import (
+    EVOLUTION_ELITE_RATE,
+    EVOLUTION_TOURNAMENT_SIZE,
     FITNESS_DAMAGE_WEIGHT,
     FITNESS_DISTANCE_WEIGHT,
     FITNESS_SURVIVAL_WEIGHT,
@@ -104,3 +106,39 @@ def test_calc_fitness_uses_enemy_record_values() -> None:
         + enemy_record["distance_improvement"] * FITNESS_DISTANCE_WEIGHT
     )
     assert manager.calc_fitness(enemy_record) == expected
+
+
+def test_select_elites_returns_highest_fitness_individuals() -> None:
+    manager = EvolutionManager(population_size=1)
+    population = [NeuralNet() for _ in range(4)]
+    fitness_list = [3.0, 10.0, 1.0, 7.0]
+
+    elites = manager.select_elites(population, fitness_list, n_elite=2)
+
+    assert elites == [population[1], population[3]]
+
+
+def test_select_elites_uses_default_elite_rate() -> None:
+    manager = EvolutionManager(population_size=1)
+    population = [NeuralNet() for _ in range(10)]
+    fitness_list = [float(index) for index in range(10)]
+    expected_count = int(len(population) * EVOLUTION_ELITE_RATE)
+
+    elites = manager.select_elites(population, fitness_list)
+
+    assert len(elites) == expected_count
+    assert elites[0] is population[-1]
+
+
+def test_tournament_select_returns_best_candidate() -> None:
+    manager = EvolutionManager(population_size=1)
+    population = [NeuralNet() for _ in range(EVOLUTION_TOURNAMENT_SIZE)]
+    fitness_list = [1.0, 8.0, 3.0]
+
+    selected = manager.tournament_select(
+        population,
+        fitness_list,
+        k=EVOLUTION_TOURNAMENT_SIZE,
+    )
+
+    assert selected is population[1]
