@@ -42,7 +42,12 @@ class EffectSink(Protocol):
     ) -> None:
         """発射時のマズルフラッシュ。"""
 
-    def spawn_shockwave(self, pos: tuple[float, float], radius: float) -> None:
+    def spawn_shockwave(
+        self,
+        pos: tuple[float, float],
+        radius: float,
+        color: tuple[int, int, int] | None = None,
+    ) -> None:
         """範囲攻撃の波紋。"""
 
 
@@ -55,21 +60,38 @@ class _NullEffects:
     def draw(self, screen: pg.Surface) -> None:
         _ = screen
 
-    def spawn_explosion(self, pos: tuple[float, float]) -> None:
-        _ = pos
+    def spawn_explosion(
+        self,
+        pos: tuple[float, float],
+        count: int | None = None,
+        color: tuple[int, int, int] | None = None,
+    ) -> None:
+        _ = pos, count, color
 
-    def spawn_hit(self, pos: tuple[float, float]) -> None:
-        _ = pos
+    def spawn_hit(
+        self,
+        pos: tuple[float, float],
+        count: int | None = None,
+        color: tuple[int, int, int] | None = None,
+    ) -> None:
+        _ = pos, count, color
 
     def spawn_muzzle_flash(
         self,
         pos: tuple[float, float],
         direction: tuple[float, float],
+        count: int | None = None,
     ) -> None:
-        _ = pos, direction
+        _ = pos, direction, count
 
-    def spawn_shockwave(self, pos: tuple[float, float], radius: float) -> None:
-        _ = pos, radius
+    def spawn_shockwave(
+        self,
+        pos: tuple[float, float],
+        radius: float,
+        color: tuple[int, int, int] | None = None,
+        duration: float | None = None,
+    ) -> None:
+        _ = pos, radius, color, duration
 
 
 class World:
