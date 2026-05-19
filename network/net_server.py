@@ -388,8 +388,17 @@ class NetServer:
 
     # ----- backward-compat thin API (used by existing tests / callers) -----
 
+    def _ensure_socket(self) -> None:
+        """同期 API 用: 受信スレッドを起動せずソケットだけ初期化する。"""
+        if self._sock is None:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind((self._host, self._port))
+            self._sock = sock
+
     def send(self, message: dict[str, Any], address: Address) -> None:
         """単発送信（ack なし）。"""
+        self._ensure_socket()
         self._send_raw(message, address)
 
     def close(self) -> None:
@@ -398,7 +407,6 @@ class NetServer:
 
     def receive(self, max_bytes: int = NET_RECV_BUFFER_BYTES) -> tuple[dict[str, Any], Address]:
         """同期受信（既存 API 互換）。"""
-        if self._sock is None:
-            raise RuntimeError("server is not started")
-        payload, address = self._sock.recvfrom(max_bytes)
+        self._ensure_socket()
+        payload, address = self._sock.recvfrom(max_bytes)  # type: ignore[union-attr]
         return decode_message(payload), address
