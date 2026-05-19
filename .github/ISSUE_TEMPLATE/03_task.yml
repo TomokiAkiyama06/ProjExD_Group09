@@ -1,0 +1,75 @@
+name: "Task"
+description: "実装作業・環境構築・CI整備など"
+title: "[Task] "
+labels: ["type: task"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: "概要"
+      placeholder: "例: Docker Composeでfrontend/backendを起動できるようにする"
+    validations:
+      required: true
+
+  - type: textarea
+    id: purpose
+    attributes:
+      label: "目的"
+      placeholder: "例: 新規メンバーがローカル環境をすぐ起動できるようにする"
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: "対応内容"
+      placeholder: |
+        - docker-compose.yml を追加する
+        - backend / frontend を同時起動できるようにする
+        - .env.example を整備する
+    validations:
+      required: true
+
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: "やらないこと"
+      placeholder: |
+        - 本番デプロイ設定
+        - UIデザイン変更
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: "完了条件"
+      placeholder: |
+        - コマンド1つでローカル環境が起動する
+        - READMEに起動手順が書かれている
+        - 既存のlint/testが通る
+    validations:
+      required: true
+
+  - type: textarea
+    id: test
+    attributes:
+      label: "確認方法"
+      placeholder: |
+        - docker compose up を実行する
+        - frontendにアクセスできる
+        - backendのヘルスチェックが通る
+    validations:
+      required: true
+
+  - type: dropdown
+    id: size
+    attributes:
+      label: "想定サイズ"
+      options:
+        - "XS: 30分〜1時間"
+        - "S: 半日"
+        - "M: 1〜2日"
+        - "L: 3日以上。分割推奨"
+    validations:
+      required: true
