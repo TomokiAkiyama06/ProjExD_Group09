@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import math
 
 import pygame as pg
@@ -104,15 +105,15 @@ class World:
             # 派生クラスが入力を反映する想定。基底では何もしない呼び出しでも可。
             update = getattr(player, "update", None)
             if callable(update):
-                try:
+                # 入力辞書を受けないシグネチャの派生にも備える
+                with contextlib.suppress(TypeError):
                     update({"dt": dt})
-                except TypeError:
-                    # 入力辞書を受けないシグネチャの派生にも備える
-                    pass
 
         for enemy in list(self._enemies):
             enemy.update(self._fortress, dt)
-        self._enemies = [e for e in self._enemies if not e.is_dead() and not e.has_reached_fortress()]
+        self._enemies = [
+            e for e in self._enemies if not e.is_dead() and not e.has_reached_fortress()
+        ]
 
         new_bullets: list[Bullet] = []
         for tower in self._towers:
