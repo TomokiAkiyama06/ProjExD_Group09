@@ -48,7 +48,7 @@ def test_deserialize_safe_on_invalid() -> None:
 def test_message_factories_have_required_fields() -> None:
     samples = [
         make_input(seq=1, player_id=1, input_payload={"move": [0, 0]}),
-        make_state(seq=2, enemies=[{"id": 1, "pos": [10, 20]}], fortress_hp=99, wave=1),
+        make_state(seq=2, enemies=[{"id": 1, "pos": [10, 20]}], core_hp=99, core_max_hp=100, wave=1),
         make_event(seq=3, event_name="tower_placed", data={"x": 1}, ack_required=True),
         make_connect("alice"),
         make_connect_ok(player_id=2),
@@ -128,14 +128,15 @@ def test_loopback_handshake_and_state() -> None:
         state_msg = make_state(
             seq=1,
             enemies=[{"id": 1, "pos": [0, 0]}],
-            fortress_hp=100,
+            core_hp=100,
+            core_max_hp=1000,
             wave=1,
         )
         server.send_state(state_msg)
         assert _wait_until(lambda: client.poll_state() is not None)
         latest = client.poll_state()
         assert latest is not None
-        assert latest.get("fortress_hp") == 100
+        assert latest.get("core_hp") == 100
 
         # input を送信し、サーバ側のキューに積まれること
         client.send_input({"move": [1.0, 0.0]})

@@ -71,7 +71,8 @@ class StateMessage(TypedDict):
     enemies: list[dict[str, Any]]
     towers: list[dict[str, Any]]
     players: list[dict[str, Any]]
-    fortress_hp: int
+    core_hp: int
+    core_max_hp: int
     wave: int
 
 
@@ -153,7 +154,8 @@ def make_state(  # noqa: PLR0913 - state スキーマの全フィールドを引
     enemies: list[dict[str, Any]] | None = None,
     towers: list[dict[str, Any]] | None = None,
     players: list[dict[str, Any]] | None = None,
-    fortress_hp: int = 0,
+    core_hp: int = 0,
+    core_max_hp: int = 0,
     wave: int = 0,
 ) -> StateMessage:
     return {
@@ -162,7 +164,8 @@ def make_state(  # noqa: PLR0913 - state スキーマの全フィールドを引
         "enemies": list(enemies or []),
         "towers": list(towers or []),
         "players": list(players or []),
-        "fortress_hp": int(fortress_hp),
+        "core_hp": int(core_hp),
+        "core_max_hp": int(core_max_hp),
         "wave": int(wave),
     }
 
