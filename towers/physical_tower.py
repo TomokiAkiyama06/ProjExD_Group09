@@ -10,28 +10,16 @@ from typing import ClassVar
 
 import pygame as pg
 
-try:
-    from ..core.base_enemy import BaseEnemy
-    from ..core.base_tower import BaseTower
-    from ..core.bullet import Bullet
-    from ..core.constants import (
-        COLOR_PHYSICAL,
-        PHYSICAL_COOLDOWN,
-        PHYSICAL_DAMAGE,
-        PHYSICAL_PIERCE_RATIO,
-        PHYSICAL_RANGE,
-    )
-except ImportError:
-    from core.base_enemy import BaseEnemy
-    from core.base_tower import BaseTower
-    from core.bullet import Bullet
-    from core.constants import (
-        COLOR_PHYSICAL,
-        PHYSICAL_COOLDOWN,
-        PHYSICAL_DAMAGE,
-        PHYSICAL_PIERCE_RATIO,
-        PHYSICAL_RANGE,
-    )
+from core.base_enemy import BaseEnemy
+from core.base_tower import BaseTower
+from core.bullet import Bullet
+from core.constants import (
+    COLOR_PHYSICAL,
+    PHYSICAL_COOLDOWN,
+    PHYSICAL_DAMAGE,
+    PHYSICAL_PIERCE_RATIO,
+    PHYSICAL_RANGE,
+)
 
 
 class PhysicalTower(BaseTower):

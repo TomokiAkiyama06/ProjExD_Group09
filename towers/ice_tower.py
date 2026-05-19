@@ -10,30 +10,17 @@ from typing import ClassVar
 
 import pygame as pg
 
-try:
-    from ..core.base_enemy import BaseEnemy
-    from ..core.base_tower import BaseTower
-    from ..core.bullet import Bullet
-    from ..core.constants import (
-        COLOR_ICE,
-        ICE_COOLDOWN,
-        ICE_DAMAGE,
-        ICE_RANGE,
-        ICE_SLOW_DURATION,
-        ICE_SLOW_FACTOR,
-    )
-except ImportError:
-    from core.base_enemy import BaseEnemy
-    from core.base_tower import BaseTower
-    from core.bullet import Bullet
-    from core.constants import (
-        COLOR_ICE,
-        ICE_COOLDOWN,
-        ICE_DAMAGE,
-        ICE_RANGE,
-        ICE_SLOW_DURATION,
-        ICE_SLOW_FACTOR,
-    )
+from core.base_enemy import BaseEnemy
+from core.base_tower import BaseTower
+from core.bullet import Bullet
+from core.constants import (
+    COLOR_ICE,
+    ICE_COOLDOWN,
+    ICE_DAMAGE,
+    ICE_RANGE,
+    ICE_SLOW_DURATION,
+    ICE_SLOW_FACTOR,
+)
 
 
 class IceBullet(Bullet):

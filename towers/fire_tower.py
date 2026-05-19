@@ -11,30 +11,17 @@ from typing import ClassVar
 
 import pygame as pg
 
-try:
-    from ..core.base_enemy import BaseEnemy
-    from ..core.base_tower import BaseTower
-    from ..core.bullet import Bullet
-    from ..core.constants import (
-        COLOR_FIRE,
-        FIRE_COOLDOWN,
-        FIRE_DAMAGE,
-        FIRE_EXPLOSION_FALLOFF,
-        FIRE_EXPLOSION_RADIUS,
-        FIRE_RANGE,
-    )
-except ImportError:
-    from core.base_enemy import BaseEnemy
-    from core.base_tower import BaseTower
-    from core.bullet import Bullet
-    from core.constants import (
-        COLOR_FIRE,
-        FIRE_COOLDOWN,
-        FIRE_DAMAGE,
-        FIRE_EXPLOSION_FALLOFF,
-        FIRE_EXPLOSION_RADIUS,
-        FIRE_RANGE,
-    )
+from core.base_enemy import BaseEnemy
+from core.base_tower import BaseTower
+from core.bullet import Bullet
+from core.constants import (
+    COLOR_FIRE,
+    FIRE_COOLDOWN,
+    FIRE_DAMAGE,
+    FIRE_EXPLOSION_FALLOFF,
+    FIRE_EXPLOSION_RADIUS,
+    FIRE_RANGE,
+)
 
 
 class FireBullet(Bullet):

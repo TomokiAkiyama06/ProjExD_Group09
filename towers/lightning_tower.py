@@ -12,34 +12,19 @@ from typing import ClassVar
 
 import pygame as pg
 
-try:
-    from ..core.base_enemy import BaseEnemy
-    from ..core.base_tower import BaseTower
-    from ..core.bullet import Bullet
-    from ..core.constants import (
-        COLOR_LIGHTNING,
-        LIGHTNING_CHAIN_COUNT,
-        LIGHTNING_CHAIN_FALLOFF,
-        LIGHTNING_CHAIN_RADIUS,
-        LIGHTNING_COOLDOWN,
-        LIGHTNING_DAMAGE,
-        LIGHTNING_RANGE,
-        LIGHTNING_VISUAL_DURATION,
-    )
-except ImportError:
-    from core.base_enemy import BaseEnemy
-    from core.base_tower import BaseTower
-    from core.bullet import Bullet
-    from core.constants import (
-        COLOR_LIGHTNING,
-        LIGHTNING_CHAIN_COUNT,
-        LIGHTNING_CHAIN_FALLOFF,
-        LIGHTNING_CHAIN_RADIUS,
-        LIGHTNING_COOLDOWN,
-        LIGHTNING_DAMAGE,
-        LIGHTNING_RANGE,
-        LIGHTNING_VISUAL_DURATION,
-    )
+from core.base_enemy import BaseEnemy
+from core.base_tower import BaseTower
+from core.bullet import Bullet
+from core.constants import (
+    COLOR_LIGHTNING,
+    LIGHTNING_CHAIN_COUNT,
+    LIGHTNING_CHAIN_FALLOFF,
+    LIGHTNING_CHAIN_RADIUS,
+    LIGHTNING_COOLDOWN,
+    LIGHTNING_DAMAGE,
+    LIGHTNING_RANGE,
+    LIGHTNING_VISUAL_DURATION,
+)
 
 
 class LightningBolt(Bullet):

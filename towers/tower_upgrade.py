@@ -13,26 +13,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-try:
-    from ..core.base_tower import BaseTower
-    from ..core.constants import (
-        TOWER_MAX_LEVEL,
-        TOWER_SELL_REFUND_RATIO,
-        TOWER_UPGRADE_COOLDOWN_MULT,
-        TOWER_UPGRADE_COST_PER_LEVEL,
-        TOWER_UPGRADE_DAMAGE_BONUS,
-        TOWER_UPGRADE_RANGE_BONUS,
-    )
-except ImportError:
-    from core.base_tower import BaseTower
-    from core.constants import (
-        TOWER_MAX_LEVEL,
-        TOWER_SELL_REFUND_RATIO,
-        TOWER_UPGRADE_COOLDOWN_MULT,
-        TOWER_UPGRADE_COST_PER_LEVEL,
-        TOWER_UPGRADE_DAMAGE_BONUS,
-        TOWER_UPGRADE_RANGE_BONUS,
-    )
+from core.base_tower import BaseTower
+from core.constants import (
+    TOWER_MAX_LEVEL,
+    TOWER_SELL_REFUND_RATIO,
+    TOWER_UPGRADE_COOLDOWN_MULT,
+    TOWER_UPGRADE_COST_PER_LEVEL,
+    TOWER_UPGRADE_DAMAGE_BONUS,
+    TOWER_UPGRADE_RANGE_BONUS,
+)
 
 
 def get_upgrade_cost(tower: BaseTower) -> int:

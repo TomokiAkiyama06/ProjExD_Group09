@@ -11,30 +11,17 @@ from typing import ClassVar
 
 import pygame as pg
 
-try:
-    from ..core.builder import Builder
-    from ..core.constants import (
-        COLOR_FIRE,
-        COLOR_ICE,
-        COLOR_LIGHTNING,
-        COLOR_PHYSICAL,
-        COLOR_TEXT,
-        SCREEN_HEIGHT,
-        SCREEN_WIDTH,
-    )
-    from ..core.world import World
-except ImportError:
-    from core.builder import Builder
-    from core.constants import (
-        COLOR_FIRE,
-        COLOR_ICE,
-        COLOR_LIGHTNING,
-        COLOR_PHYSICAL,
-        COLOR_TEXT,
-        SCREEN_HEIGHT,
-        SCREEN_WIDTH,
-    )
-    from core.world import World
+from core.builder import Builder
+from core.constants import (
+    COLOR_FIRE,
+    COLOR_ICE,
+    COLOR_LIGHTNING,
+    COLOR_PHYSICAL,
+    COLOR_TEXT,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+)
+from core.world import World
 
 
 class TowerSelectorUI:
