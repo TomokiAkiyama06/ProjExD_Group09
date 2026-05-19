@@ -135,6 +135,8 @@ class NetClient:
             with suppress(OSError):
                 self._sock.close()
             self._sock = None
+        self._connected.clear()
+        self._player_id = None
 
     # ----- public protocol -----
 
