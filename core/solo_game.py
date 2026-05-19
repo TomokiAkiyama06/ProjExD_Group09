@@ -8,6 +8,14 @@ from __future__ import annotations
 
 import pygame as pg
 
+from towers import (
+    FireTower,
+    IceTower,
+    LightningTower,
+    PhysicalTower,
+    TowerSelectorUI,
+)
+
 from .base_hud import BaseHud
 from .builder import Builder
 from .constants import SCREEN_HEIGHT, SCREEN_WIDTH
@@ -23,13 +31,22 @@ class SoloGame(Game):
     def __init__(self) -> None:
         super().__init__()
         self._world: World = World()
-        self._builder: Builder = Builder(pos=(80.0, SCREEN_HEIGHT - 40.0))
+        self._builder: Builder = Builder(
+            pos=(80.0, SCREEN_HEIGHT - 40.0),
+            tower_factories={
+                "fire": FireTower,
+                "ice": IceTower,
+                "lightning": LightningTower,
+                "physical": PhysicalTower,
+            },
+        )
         self._fighter: Fighter = Fighter(pos=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2))
         self._world.add_player(self._builder)
         self._world.add_player(self._fighter)
         self._wave_manager: WaveManager = WaveManager()
         self._hud: BaseHud = BaseHud()
         self._hud.set_max_hp(self._world.get_fortress().get_max_hp())
+        self._selector_ui: TowerSelectorUI = TowerSelectorUI()
         self._generation: int = 0
 
     def get_world(self) -> World:
@@ -68,7 +85,7 @@ class SoloGame(Game):
         self._wave_manager.update(self._world, dt)
 
     def draw(self) -> None:
-        """World 描画 ＋ HUD オーバーレイ。"""
+        """World 描画 ＋ HUD オーバーレイ ＋ タワー選択 UI。"""
         self._world.draw(self._screen)
         self._hud.draw(
             self._screen,
@@ -79,4 +96,10 @@ class SoloGame(Game):
                 "wave": self._wave_manager.get_wave(),
                 "generation": self._generation,
             },
+        )
+        self._selector_ui.draw(
+            self._screen,
+            builder=self._builder,
+            world=self._world,
+            mouse_pos=pg.mouse.get_pos(),
         )
