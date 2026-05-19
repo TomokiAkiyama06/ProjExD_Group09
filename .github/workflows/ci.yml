@@ -44,6 +44,11 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import runpy
+          import sys
+
+          repo_root = Path(".").resolve()
+          if str(repo_root) not in sys.path:
+              sys.path.insert(0, str(repo_root))
 
           test_files = sorted(Path(".").rglob("test_*.py"))
 
