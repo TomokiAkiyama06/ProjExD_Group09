@@ -10,6 +10,7 @@ import numpy as np
 
 from core.base_enemy import BaseEnemy
 from core.constants import (
+    EARLY_GENERATION_THRESHOLD,
     ENEMY_BASE_DAMAGE,
     ENEMY_BASE_HP,
     ENEMY_BASE_REWARD,
@@ -43,6 +44,7 @@ class EvolvedEnemy(BaseEnemy):
         speed: float = BaseEnemy.DEFAULT_SPEED,
         damage: int = ENEMY_BASE_DAMAGE,
         reward: int = ENEMY_BASE_REWARD,
+        generation: int = 0,
     ) -> None:
         """敵を初期化し、個体ごとのニューラルネットを割り当てる。
 
@@ -53,9 +55,11 @@ class EvolvedEnemy(BaseEnemy):
             speed: 移動速度
             damage: 拠点到達時のダメージ
             reward: 撃破時の報酬
+            generation: 進化の世代番号。EARLY_GENERATION_THRESHOLD以下の間はタワー誘導で移動する
         """
         super().__init__(pos=pos, hp=hp, speed=speed, damage=damage, reward=reward)
         self._brain: NeuralNet = brain if brain is not None else NeuralNet()
+        self._generation: int = generation
 
     @property
     def brain(self) -> NeuralNet:
@@ -65,6 +69,14 @@ class EvolvedEnemy(BaseEnemy):
     def get_brain(self) -> NeuralNet:
         """敵が保持するニューラルネットを返す。"""
         return self._brain
+
+    def get_generation(self) -> int:
+        """現在の世代番号を返す。"""
+        return self._generation
+
+    def set_generation(self, generation: int) -> None:
+        """世代番号を設定する。"""
+        self._generation = generation
 
     def decide(self, inputs: np.ndarray) -> np.ndarray:
         """現在の観測入力から移動方向ベクトルを決定する。"""
