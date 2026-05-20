@@ -17,7 +17,7 @@ import pygame as pg
 from .base_player import BasePlayer
 from .base_tower import BaseTower
 from .bullet import Bullet
-from .constants import COLOR_PLAYER, PLAYER_MAX_HP, WEAPON_SWITCH_COOLDOWN
+from .constants import COLOR_PLAYER, PLAYER_MAX_HP, SE_WEAPON_FIRE, WEAPON_SWITCH_COOLDOWN
 from .world import World
 
 if TYPE_CHECKING:
@@ -183,6 +183,7 @@ class Fighter(BasePlayer):
         if not bullets:
             return
         world.get_effects().spawn_muzzle_flash(self._pos, self._facing)
+        world.get_sound().play_se(SE_WEAPON_FIRE)
         self._pending_bullets.extend(bullets)
 
     def _try_skill(self, world: World) -> None:

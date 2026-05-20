@@ -11,7 +11,7 @@ from collections.abc import Callable
 from enum import Enum
 
 from .base_enemy import BaseEnemy
-from .constants import BOSS_WAVE_MODULO
+from .constants import BOSS_WAVE_MODULO, SE_WAVE_END, SE_WAVE_START
 from .world import World
 
 
@@ -112,6 +112,7 @@ class WaveManager:
             self._phase_timer -= dt
             if self._phase_timer <= 0.0:
                 self._enter_battle()
+                world.get_sound().play_se(SE_WAVE_START)
             return
 
         if self._phase is WavePhase.BATTLE:
@@ -129,6 +130,7 @@ class WaveManager:
                     self._spawn_timer = self.SPAWN_INTERVAL
             if self._remaining_to_spawn == 0 and not world.get_enemies():
                 self._enter_summary()
+                world.get_sound().play_se(SE_WAVE_END)
             return
 
         if self._phase is WavePhase.SUMMARY:

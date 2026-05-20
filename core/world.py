@@ -28,6 +28,9 @@ from .constants import (
     EFFECT_SHOCKWAVE_DURATION,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
+    SE_ENEMY_DIE,
+    SE_HIT,
+    SE_TOWER_FIRE,
 )
 from .fortress import Fortress
 
@@ -118,6 +121,32 @@ class _NullEffects:
         _ = pos, radius, color, duration
 
 
+class SoundSink(Protocol):
+    """BGM・SE 再生の最小プロトコル（実体は presentation.SoundManager）。"""
+
+    def play_se(self, name: str) -> None:
+        """効果音を 1 回再生する。"""
+
+    def play_bgm(self, name: str, loops: int = -1) -> None:
+        """BGM を再生する（loops=-1 で無限ループ）。"""
+
+    def stop_bgm(self) -> None:
+        """BGM を停止する。"""
+
+
+class _NullSound:
+    """SoundSink を未注入時のフォールバック（全 no-op）。"""
+
+    def play_se(self, name: str) -> None:
+        _ = name
+
+    def play_bgm(self, name: str, loops: int = -1) -> None:
+        _ = name, loops
+
+    def stop_bgm(self) -> None:
+        pass
+
+
 class World:
     """ワールド（マップ + エンティティ）。"""
 
@@ -130,6 +159,7 @@ class World:
         spawn_points: list[tuple[float, float]] | None = None,
         fortress: Fortress | None = None,
         effects: EffectSink | None = None,
+        sound: SoundSink | None = None,
     ) -> None:
         if spawn_points is None:
             spawn_points = [
@@ -144,6 +174,7 @@ class World:
         self._towers: list[BaseTower] = []
         self._bullets: list[Bullet] = []
         self._effects: EffectSink = effects if effects is not None else _NullEffects()
+        self._sound: SoundSink = sound if sound is not None else _NullSound()
 
     # ----- accessors -----
 
@@ -152,6 +183,9 @@ class World:
 
     def get_effects(self) -> EffectSink:
         return self._effects
+
+    def get_sound(self) -> SoundSink:
+        return self._sound
 
     def get_spawn_points(self) -> list[tuple[float, float]]:
         return list(self._spawn_points)
@@ -215,9 +249,14 @@ class World:
 
         for enemy in list(self._enemies):
             enemy.update(self._fortress, dt)
-        # 撃破・到達した敵を弾く前に撃破位置のエフェクトを焚く
+        # 撃破・到達した敵を弾く前に撃破位置のエフェクト＋SE を焚く
         for dead in (e for e in self._enemies if e.is_dead()):
+            death_hook = getattr(dead, "trigger_death_effect", None)
+            if callable(death_hook):
+                death_hook(self)
+                continue
             self._effects.spawn_explosion(dead.get_pos())
+            self._sound.play_se(SE_ENEMY_DIE)
         self._enemies = [
             e for e in self._enemies if not e.is_dead() and not e.has_reached_fortress()
         ]
@@ -225,11 +264,17 @@ class World:
         new_bullets: list[Bullet] = []
         for tower in self._towers:
             new_bullets.extend(tower.update(self._enemies))
+        if new_bullets:
+            self._sound.play_se(SE_TOWER_FIRE)
         self._bullets.extend(new_bullets)
 
+        # 命中したフレームを検知して SE
         for bullet in self._bullets:
             bullet.update(dt)
+            was_consumed_after_update = bullet.is_consumed()
             bullet.check_hit(self._enemies)
+            if not was_consumed_after_update and bullet.is_consumed():
+                self._sound.play_se(SE_HIT)
         self._bullets = [b for b in self._bullets if not b.is_consumed()]
 
         # エフェクトのタイムステップ

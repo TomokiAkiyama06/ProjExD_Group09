@@ -18,6 +18,8 @@ try:
         COLOR_EFFECT_SHOCKWAVE,
         SCREEN_HEIGHT,
         SCREEN_WIDTH,
+        SE_SKILL_AREA,
+        SE_SKILL_DASH,
         SKILL_AREA_COOLDOWN,
         SKILL_AREA_DAMAGE,
         SKILL_AREA_RADIUS,
@@ -34,6 +36,8 @@ except ImportError:
         COLOR_EFFECT_SHOCKWAVE,
         SCREEN_HEIGHT,
         SCREEN_WIDTH,
+        SE_SKILL_AREA,
+        SE_SKILL_DASH,
         SKILL_AREA_COOLDOWN,
         SKILL_AREA_DAMAGE,
         SKILL_AREA_RADIUS,
@@ -111,7 +115,6 @@ class DashAttackSkill(BaseSkill):
         return self._invincible
 
     def _do_activate(self, fighter: BasePlayer, world: World) -> None:
-        _ = world
         get_facing = getattr(fighter, "get_facing", None)
         if callable(get_facing):
             direction = get_facing()
@@ -121,6 +124,7 @@ class DashAttackSkill(BaseSkill):
         self._active_remaining = SKILL_DASH_DURATION
         self._hit_ids = set()
         self._invincible = True
+        world.get_sound().play_se(SE_SKILL_DASH)
 
     def _tick(self, dt: float, fighter: BasePlayer, world: World) -> None:
         if self._active_remaining <= 0.0:
@@ -164,12 +168,13 @@ class AreaAttackSkill(BaseSkill):
                 enemy.take_damage(SKILL_AREA_DAMAGE)
                 world.get_effects().spawn_hit((ex, ey))
                 hit_any = True
-        # 視覚エフェクト（波紋）
+        # 視覚エフェクト（波紋）＋ SE
         world.get_effects().spawn_shockwave(
             (ox, oy),
             radius=SKILL_AREA_RADIUS,
             color=COLOR_EFFECT_SHOCKWAVE,
         )
+        world.get_sound().play_se(SE_SKILL_AREA)
         _ = hit_any
 
 
