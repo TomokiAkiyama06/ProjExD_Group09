@@ -146,8 +146,7 @@ class EvolutionManager:
         parent_count = max(1, len(order) // 3)
         parents = [self.population[index] for index in order[:parent_count]]
         self.population = [
-            self._mutated_copy(parents[i % len(parents)])
-            for i in range(self.population_size)
+            self._mutated_copy(parents[i % len(parents)]) for i in range(self.population_size)
         ]
         return self.population
 
