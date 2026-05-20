@@ -14,11 +14,11 @@ import pygame as pg
 from .base_enemy import BaseEnemy
 from .base_hud import BaseHud
 from .builder import Builder, TowerFactory
-from .constants import SCREEN_HEIGHT, SCREEN_WIDTH
+from .constants import BGM_MAIN, SCREEN_HEIGHT, SCREEN_WIDTH
 from .fighter import Fighter
 from .game import Game
 from .wave_manager import EnemyFactory, WaveManager
-from .world import EffectSink, World
+from .world import EffectSink, SoundSink, World
 
 if TYPE_CHECKING:
     from combat.boss_enemy import BossEnemy
@@ -57,6 +57,7 @@ class SoloGame(Game):
         tower_factories: dict[str, TowerFactory] | None = None,
         tower_selector: TowerSelector | None = None,
         effects: EffectSink | None = None,
+        sound: SoundSink | None = None,
         fighter_weapons: list[BaseWeapon] | None = None,
         fighter_skills: list[BaseSkill] | None = None,
         weapon_selector: WeaponSelector | None = None,
@@ -65,7 +66,8 @@ class SoloGame(Game):
         max_wave: int = 3,
     ) -> None:
         super().__init__()
-        self._world: World = World(effects=effects)
+        self._sound: SoundSink | None = sound
+        self._world: World = World(effects=effects, sound=sound)
         self._builder: Builder = Builder(
             pos=(80.0, SCREEN_HEIGHT - 40.0),
             tower_factories=tower_factories,
@@ -88,6 +90,9 @@ class SoloGame(Game):
         self._weapon_ui: WeaponSelector | None = weapon_selector
         self._known_enemies: set[int] = set()
         self._generation: int = 0
+        # BGM 起動（音源未配置でも no-op で安全）
+        if self._sound is not None:
+            self._sound.play_bgm(BGM_MAIN)
 
     def get_world(self) -> World:
         return self._world
