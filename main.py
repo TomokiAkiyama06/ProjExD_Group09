@@ -76,6 +76,28 @@ def run_client(ip: str, port: int = 50000) -> None:
     game.run()
 
 
+def run_versus() -> None:
+    """対戦モード（同一プロセス内で 2 フィールドを並列駆動）。
+
+    `presentation.VersusGame` を起動する。`_build_solo_kwargs` で生成した
+    enemy_factory / boss_factory を流用し、両フィールドで同じ敵が出現する。
+    """
+    from combat import BossEnemy, EffectManager
+    from evolution import EvolvedEnemy
+    from presentation.versus_mode import VersusGame
+
+    game = VersusGame(
+        enemy_factory=EvolvedEnemy,
+        boss_factory=BossEnemy,
+        # SE は両フィールド共通の発火点として EffectManager 系の sound 注入も将来検討
+        sound=None,
+        local_side="left",
+        on_send_enemy=None,
+    )
+    _ = EffectManager  # 将来の拡張用に import 維持
+    game.run()
+
+
 def create_solo_game() -> "SoloGame":
     """1台2プレイヤーモードに必要な concrete 実装を注入して生成する。"""
     from core.solo_game import SoloGame
@@ -95,6 +117,7 @@ def main() -> None:
     group.add_argument("--host", action="store_true", help="ホストモード（プレイヤー1）")
     group.add_argument("--client", action="store_true", help="クライアントモード（プレイヤー2）")
     group.add_argument("--solo", action="store_true", help="1台2プレイヤーモード")
+    group.add_argument("--versus", action="store_true", help="対戦モード（同一PC内 2 フィールド）")
     parser.add_argument("--ip", default="127.0.0.1", help="--client 時の接続先ホストIP")
     parser.add_argument("--port", type=int, default=50000, help="UDP ポート番号")
     args = parser.parse_args()
@@ -103,6 +126,8 @@ def main() -> None:
         run_host(port=args.port)
     elif args.client:
         run_client(args.ip, port=args.port)
+    elif args.versus:
+        run_versus()
     else:
         run_solo()
 
