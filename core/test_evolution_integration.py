@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import os
+import time
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
@@ -127,10 +128,59 @@ def test_evolution_driver_factory_returns_evolved_enemy_with_brain() -> None:
     assert enemy.get_generation() == 1
 
 
+def test_observe_frame_locks_survival_time_at_death() -> None:
+    """observe_frame で死亡時点の時刻が記録され、その後の経過時間が加算されない。"""
+    manager = EvolutionManager(population_size=2)
+    driver = EvolutionDriver(manager=manager)
+    enemy = driver.spawn_enemy((100.0, 100.0))
+    # スポーン記録の初期値: end_time は None
+    record = driver._spawned[0]
+    assert record.end_time is None
+
+    # 敵を倒し、observe_frame で死亡時刻を確定
+    enemy.take_damage(enemy.get_hp())
+    assert enemy.is_dead()
+    death_time = time.monotonic()
+    driver.observe_frame(now=death_time)
+    assert record.end_time == death_time
+
+    # その後さらに時間が経過しても end_time は更新されない
+    later = death_time + 5.0
+    driver.observe_frame(now=later)
+    assert record.end_time == death_time
+
+
+def test_early_death_yields_smaller_survival_time_than_full_wave() -> None:
+    """早期に倒された敵の survival_time は、最後まで生存した敵より小さくなる。"""
+    manager = EvolutionManager(population_size=2)
+    driver = EvolutionDriver(manager=manager)
+    early = driver.spawn_enemy((100.0, 100.0))
+    late = driver.spawn_enemy((100.0, 100.0))
+
+    # spawn_time を強制的に過去にずらして、両者を同じ時刻起点に揃える
+    base = driver._spawned[0].spawn_time
+    driver._spawned[0].spawn_time = base
+    driver._spawned[1].spawn_time = base
+
+    # early は spawn 0.5 秒後に死亡、late はウェーブ末（5 秒）まで生存
+    early.take_damage(early.get_hp())
+    driver.observe_frame(now=base + 0.5)
+    finalize_now = base + 5.0
+    driver.observe_frame(now=finalize_now)
+
+    fit_early = driver._calc_record_fitness(driver._spawned[0], finalize_now)
+    fit_late = driver._calc_record_fitness(driver._spawned[1], finalize_now)
+    # damage_dealt も distance_improvement も同条件のため survival_time の差で比較できる
+    assert fit_early < fit_late
+    _ = late  # 参照保持（unused 警告回避）
+
+
 if __name__ == "__main__":
     test_solo_game_uses_driver_as_enemy_factory()
     test_generation_progresses_after_wave_summary()
     test_finalize_wave_appends_to_evolution_graph()
     test_solo_game_without_driver_keeps_generation_zero()
     test_evolution_driver_factory_returns_evolved_enemy_with_brain()
+    test_observe_frame_locks_survival_time_at_death()
+    test_early_death_yields_smaller_survival_time_than_full_wave()
     print("All evolution integration tests passed.")

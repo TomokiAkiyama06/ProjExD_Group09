@@ -157,7 +157,9 @@ class SoloGame(Game):
         self._world.update(dt)
         self._wave_manager.update(self._world, dt)
 
-        # ウェーブ終了（BATTLE → SUMMARY）を検知して進化ループを進める
+        # 進化AIの戦績観測（死亡/到達した個体の終了時刻を確定）と世代切替
+        if self._evolution_driver is not None:
+            self._evolution_driver.observe_frame()
         self._tick_evolution()
 
     def draw(self) -> None:

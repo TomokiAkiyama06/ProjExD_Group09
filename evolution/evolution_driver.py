@@ -41,6 +41,11 @@ class _SpawnRecord:
     brain: NeuralNet
     spawn_time: float
     initial_distance: float = 0.0
+    # 死亡または拠点到達した瞬間のタイムスタンプ。生存中は None。
+    end_time: float | None = None
+    # 終了時点の座標（敵が World から取り除かれた後でも distance_improvement を
+    # 計算できるよう、死亡/到達フレームで確定させる）。
+    end_pos: tuple[float, float] | None = None
 
 
 @dataclass
@@ -76,6 +81,25 @@ class EvolutionDriver:
     def set_fortress_pos(self, pos: tuple[float, float]) -> None:
         """拠点座標を設定する（finalize_wave での距離計算に使う）。"""
         self.fortress_pos = (float(pos[0]), float(pos[1]))
+
+    # ----- per-frame observation -----
+
+    def observe_frame(self, now: float | None = None) -> None:
+        """SoloGame の毎フレームで呼び、死亡/到達した個体の終了時刻を確定する。
+
+        敵が World._enemies から外される前後どちらでも、`enemy.is_dead()` または
+        `enemy.has_reached_fortress()` が True になった瞬間の `now` をその個体の
+        終了タイムスタンプとして記録する。
+        """
+        if now is None:
+            now = time.monotonic()
+        for record in self._spawned:
+            if record.end_time is not None:
+                continue
+            enemy = record.enemy
+            if enemy.is_dead() or enemy.has_reached_fortress():
+                record.end_time = now
+                record.end_pos = enemy.get_pos()
 
     # ----- spawn -----
 
@@ -127,6 +151,9 @@ class EvolutionDriver:
         if not self._spawned:
             return False
 
+        # finalize 時点でまだ end_time が確定していない個体（生存中扱い）にも
+        # この瞬間を終了時刻として記録する。
+        self.observe_frame()
         best, avg, fitness_list = self._compute_fitness_per_population()
         previous_generation = self.manager.get_generation()
         self.manager.next_generation(fitness_list)
@@ -166,11 +193,17 @@ class EvolutionDriver:
         return best, avg, fitness_list
 
     def _calc_record_fitness(self, record: _SpawnRecord, now: float) -> float:
-        """1 個体のスポーン記録から fitness を算出する。"""
+        """1 個体のスポーン記録から fitness を算出する。
+
+        死亡/到達済みの個体は `record.end_time` を使い、生存個体は `now` を使う。
+        これにより早期に倒された敵にウェーブ終了までの時間が加算されない。
+        """
         enemy = record.enemy
         damage_dealt = enemy.get_damage() if enemy.has_reached_fortress() else 0
-        survival_time = max(0.0, now - record.spawn_time)
-        ex, ey = enemy.get_pos()
+        end_time = record.end_time if record.end_time is not None else now
+        survival_time = max(0.0, end_time - record.spawn_time)
+        # 終了座標も確定済みならそれを使う（敵が World から除外された後でも安全）。
+        ex, ey = record.end_pos if record.end_pos is not None else enemy.get_pos()
         end_distance = math.hypot(self.fortress_pos[0] - ex, self.fortress_pos[1] - ey)
         distance_improvement = max(0.0, record.initial_distance - end_distance)
         return self.manager.calc_fitness(
