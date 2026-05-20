@@ -45,6 +45,7 @@ FITNESS_DISTANCE_WEIGHT: float = 5.0
 GA_MUTATION_RATE: float = 0.05
 EVOLUTION_ELITE_RATE: float = 0.2
 EVOLUTION_TOURNAMENT_SIZE: int = 3
+EARLY_GENERATION_THRESHOLD: int = 5  # この世代以下はNNを使わずタワー誘導で移動する
 
 # ===== ネットワーク（担当②） =====
 NET_STATE_HZ: int = 20  # ホスト→クライアントの状態ブロードキャスト周波数
