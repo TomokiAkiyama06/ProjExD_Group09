@@ -99,6 +99,46 @@ def test_next_generation_keeps_population_size() -> None:
     assert len(generation) == 6
 
 
+def test_crossover_mixes_parent_weights() -> None:
+    manager = EvolutionManager(population_size=1)
+    parent_a = NeuralNet(input_size=2, hidden_size=2, output_size=2)
+    parent_b = NeuralNet(input_size=2, hidden_size=2, output_size=2)
+    parent_a.set_weights([np.zeros_like(weights) for weights in parent_a.get_weights()])
+    parent_b.set_weights([np.ones_like(weights) for weights in parent_b.get_weights()])
+    random_state = np.random.get_state()
+
+    try:
+        np.random.seed(0)
+        child = manager.crossover(parent_a, parent_b)
+    finally:
+        np.random.set_state(random_state)
+
+    child_weights = child.get_weights()
+    assert all(np.all((weights == 0.0) | (weights == 1.0)) for weights in child_weights)
+    assert any(np.any(weights == 0.0) for weights in child_weights)
+    assert any(np.any(weights == 1.0) for weights in child_weights)
+
+
+def test_crossover_keeps_parents_independent() -> None:
+    manager = EvolutionManager(population_size=1)
+    parent_a = NeuralNet(input_size=2, hidden_size=2, output_size=2)
+    parent_b = NeuralNet(input_size=2, hidden_size=2, output_size=2)
+    parent_a_weights = parent_a.get_weights()
+    parent_b_weights = parent_b.get_weights()
+
+    child = manager.crossover(parent_a, parent_b)
+    child.w1[0, 0] += 100.0
+
+    assert all(
+        np.array_equal(before, after)
+        for before, after in zip(parent_a_weights, parent_a.get_weights(), strict=True)
+    )
+    assert all(
+        np.array_equal(before, after)
+        for before, after in zip(parent_b_weights, parent_b.get_weights(), strict=True)
+    )
+
+
 def test_mutate_rate_zero_keeps_weights_unchanged() -> None:
     manager = EvolutionManager(population_size=1)
     net = NeuralNet()

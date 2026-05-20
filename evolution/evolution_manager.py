@@ -58,6 +58,28 @@ class EvolutionManager:
             new_weights.append(weights + noise * mask)
         nn.set_weights(new_weights)
 
+    def crossover(self, parent_a: NeuralNet, parent_b: NeuralNet) -> NeuralNet:
+        """一様交叉で親2体の重みを混ぜた子個体を生成する。
+
+        Args:
+            parent_a: 交叉元の親個体A
+            parent_b: 交叉元の親個体B
+
+        Returns:
+            各重み・バイアス要素を50%確率でどちらかの親から受け継いだ子個体
+        """
+        child = parent_a.clone()
+        parent_a_weights = parent_a.get_weights()
+        parent_b_weights = parent_b.get_weights()
+        child_weights: list[np.ndarray] = []
+
+        for weights_a, weights_b in zip(parent_a_weights, parent_b_weights, strict=True):
+            mask = np.random.rand(*weights_a.shape) < 0.5
+            child_weights.append(np.where(mask, weights_a, weights_b))
+
+        child.set_weights(child_weights)
+        return child
+
     def calc_fitness(self, enemy_record: dict[str, float | int]) -> float:
         """1個体の記録から適応度を計算する。
 
