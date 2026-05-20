@@ -6,6 +6,7 @@ import numpy as np
 
 from core.base_tower import BaseTower
 from core.constants import (
+    EARLY_GENERATION_THRESHOLD,
     EVOLUTION_ELITE_RATE,
     EVOLUTION_TOURNAMENT_SIZE,
     FITNESS_DAMAGE_WEIGHT,
@@ -127,7 +128,13 @@ def test_evolved_enemy_moves_with_brain_output() -> None:
 
 def test_world_passes_towers_to_evolved_enemy() -> None:
     brain = _FixedBrain((0.0, 1.0))
-    enemy = EvolvedEnemy(pos=(100.0, 100.0), brain=brain, speed=0.0)
+    # EARLY_GENERATION_THRESHOLD を超えた世代を指定してNNパスを通す
+    enemy = EvolvedEnemy(
+        pos=(100.0, 100.0),
+        brain=brain,
+        speed=0.0,
+        generation=EARLY_GENERATION_THRESHOLD + 1,
+    )
     tower = BaseTower(pos=(220.0, 160.0))
     world = World(spawn_points=[], fortress=Fortress(pos=(900.0, 100.0)))
     world.add_enemy(enemy)

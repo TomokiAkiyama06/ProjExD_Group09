@@ -92,7 +92,11 @@ class EvolvedEnemy(BaseEnemy):
         towers: Sequence[BaseTower],
         dt: float = 1.0 / 60.0,
     ) -> None:
-        """拠点と近傍タワーを観測し、NNの出力方向へ移動する。
+        """拠点と近傍タワーを観測し、移動方向を決定して移動する。
+
+        EARLY_GENERATION_THRESHOLD 以下の世代では最近傍タワーへ向かい、
+        それ以降の世代では NN の出力方向を使う。タワーが存在しない早期世代では
+        NN にフォールバックする。
 
         Args:
             fortress: 目標となる拠点
@@ -105,9 +109,12 @@ class EvolvedEnemy(BaseEnemy):
         if self._handle_fortress_contact(fortress):
             return
 
-        inputs = self._build_input_vector(fortress, towers)
-        velocity = np.asarray(self.decide(inputs), dtype=float)
-        vx, vy = self._normalize_output(velocity)
+        if self._generation <= EARLY_GENERATION_THRESHOLD and towers:
+            vx, vy = self._direction_to_nearest_tower(towers)
+        else:
+            inputs = self._build_input_vector(fortress, towers)
+            velocity = np.asarray(self.decide(inputs), dtype=float)
+            vx, vy = self._normalize_output(velocity)
         if vx == 0.0 and vy == 0.0:
             return
 
@@ -159,6 +166,29 @@ class EvolvedEnemy(BaseEnemy):
         if self._max_hp <= 0:
             return 0.0
         return self._clip(self._hp / self._max_hp, minimum=0.0, maximum=1.0)
+
+    def _direction_to_nearest_tower(
+        self,
+        towers: Sequence[BaseTower],
+    ) -> tuple[float, float]:
+        """最近傍タワーへの正規化方向ベクトルを返す。
+
+        同距離のタワーが複数あるとき最初に見つかったものを使う。
+        タワーと完全に同座標の場合は (0.0, 0.0) を返す。
+
+        Args:
+            towers: 対象タワー一覧（空でないこと）
+
+        Returns:
+            長さ 1.0 の方向ベクトル (vx, vy)、または同座標なら (0.0, 0.0)
+        """
+        nearest = min(towers, key=lambda t: self._distance_to(t.get_pos()))
+        tx, ty = nearest.get_pos()
+        x, y = self._pos
+        dist = math.hypot(tx - x, ty - y)
+        if dist == 0.0:
+            return (0.0, 0.0)
+        return ((tx - x) / dist, (ty - y) / dist)
 
     def _distance_to(self, pos: tuple[float, float]) -> float:
         """現在位置から指定座標までの距離を返す。"""
