@@ -17,13 +17,26 @@ from .builder import Builder, TowerFactory
 from .constants import BGM_MAIN, SCREEN_HEIGHT, SCREEN_WIDTH
 from .fighter import Fighter
 from .game import Game
-from .wave_manager import EnemyFactory, WaveManager
+from .wave_manager import EnemyFactory, WaveManager, WavePhase
 from .world import EffectSink, SoundSink, World
 
 if TYPE_CHECKING:
     from combat.boss_enemy import BossEnemy
     from combat.fighter_skills import BaseSkill
     from combat.weapons import BaseWeapon
+    from evolution.evolution_driver import EvolutionDriver
+
+
+class EvolutionGraphSink(Protocol):
+    """EvolutionGraph の描画インターフェース（疎結合用）。"""
+
+    def draw(
+        self,
+        screen: pg.Surface,
+        origin: tuple[int, int],
+        size: tuple[int, int] | None = None,
+    ) -> None:
+        """グラフを描画する。"""
 
 
 class TowerSelector(Protocol):
@@ -64,6 +77,9 @@ class SoloGame(Game):
         enemy_factory: EnemyFactory | None = None,
         boss_factory: EnemyFactory | None = None,
         max_wave: int = 3,
+        evolution_driver: EvolutionDriver | None = None,
+        evolution_graph: EvolutionGraphSink | None = None,
+        evolution_graph_origin: tuple[int, int] = (10, 80),
     ) -> None:
         super().__init__()
         self._world: World = World(effects=effects, sound=sound)
@@ -78,6 +94,12 @@ class SoloGame(Game):
         )
         self._world.add_player(self._builder)
         self._world.add_player(self._fighter)
+        # EvolutionDriver があれば enemy_factory として spawn_enemy を使う
+        self._evolution_driver: EvolutionDriver | None = evolution_driver
+        if self._evolution_driver is not None:
+            self._evolution_driver.set_fortress_pos(self._world.get_fortress().get_pos())
+            if enemy_factory is None:
+                enemy_factory = self._evolution_driver.spawn_enemy
         self._wave_manager: WaveManager = WaveManager(
             enemy_factory=enemy_factory,
             max_wave=max_wave,
@@ -87,8 +109,13 @@ class SoloGame(Game):
         self._hud.set_max_hp(self._world.get_fortress().get_max_hp())
         self._selector_ui: TowerSelector | None = tower_selector
         self._weapon_ui: WeaponSelector | None = weapon_selector
+        self._evolution_graph: EvolutionGraphSink | None = evolution_graph
+        self._evolution_graph_origin: tuple[int, int] = evolution_graph_origin
         self._known_enemies: set[int] = set()
-        self._generation: int = 0
+        self._generation: int = (
+            self._evolution_driver.get_generation() if self._evolution_driver else 0
+        )
+        self._prev_wave_phase: WavePhase = self._wave_manager.get_phase()
         # BGM 起動（音源未配置でも no-op で安全）
         self._world.get_sound().play_bgm(BGM_MAIN)
 
@@ -111,7 +138,7 @@ class SoloGame(Game):
             self._fighter.handle_event(event, self._world)
 
     def update(self, dt: float) -> None:
-        """両プレイヤーの入力反映 → World 更新 → ウェーブ進行。"""
+        """両プレイヤーの入力反映 → World 更新 → ウェーブ進行 → 世代切替。"""
         keys = pg.key.get_pressed()
         self._fighter.update_keys(keys, dt, self._world)
 
@@ -129,6 +156,9 @@ class SoloGame(Game):
 
         self._world.update(dt)
         self._wave_manager.update(self._world, dt)
+
+        # ウェーブ終了（BATTLE → SUMMARY）を検知して進化ループを進める
+        self._tick_evolution()
 
     def draw(self) -> None:
         """World 描画 ＋ HUD オーバーレイ ＋ 各種 UI。"""
@@ -154,6 +184,8 @@ class SoloGame(Game):
             current_weapon = self._fighter.get_current_weapon()
             if current_weapon is not None:
                 self._weapon_ui.draw(self._screen, self._fighter, current_weapon)
+        if self._evolution_graph is not None:
+            self._evolution_graph.draw(self._screen, self._evolution_graph_origin)
 
     def _update_bosses(self, dt: float) -> None:
         """BossEnemy の特殊行動と撃破演出を呼ぶ。
@@ -179,3 +211,15 @@ class SoloGame(Game):
         # 既知 ID セットから消えた敵を掃除（メモリリーク防止）
         live_ids = {id(e) for e in enemies if not e.is_dead()}
         self._known_enemies &= live_ids
+
+    def _tick_evolution(self) -> None:
+        """WaveManager の BATTLE → SUMMARY 遷移を検知して進化を進める。"""
+        current_phase = self._wave_manager.get_phase()
+        if (
+            self._evolution_driver is not None
+            and self._prev_wave_phase is WavePhase.BATTLE
+            and current_phase is WavePhase.SUMMARY
+        ):
+            self._evolution_driver.finalize_wave()
+            self._generation = self._evolution_driver.get_generation()
+        self._prev_wave_phase = current_phase
