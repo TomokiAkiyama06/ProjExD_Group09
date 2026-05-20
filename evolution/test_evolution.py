@@ -10,6 +10,7 @@ from core.constants import (
     FITNESS_DAMAGE_WEIGHT,
     FITNESS_DISTANCE_WEIGHT,
     FITNESS_SURVIVAL_WEIGHT,
+    GA_MUTATION_RATE,
 )
 from evolution.evolution_manager import EvolutionManager
 from evolution.neural_net import DEFAULT_INPUT_SIZE, DEFAULT_OUTPUT_SIZE, NeuralNet
@@ -87,6 +88,11 @@ def test_evolution_manager_uses_default_neural_net_shape() -> None:
     assert manager.population[0].output_size == DEFAULT_OUTPUT_SIZE
 
 
+def test_evolution_manager_uses_default_mutation_rate() -> None:
+    manager = EvolutionManager(population_size=1)
+    assert manager.mutation_rate == GA_MUTATION_RATE
+
+
 def test_next_generation_keeps_population_size() -> None:
     manager = EvolutionManager(population_size=6)
     generation = manager.next_generation([1, 2, 3, 4, 5, 6])
@@ -130,6 +136,39 @@ def test_crossover_keeps_parents_independent() -> None:
     assert all(
         np.array_equal(before, after)
         for before, after in zip(parent_b_weights, parent_b.get_weights(), strict=True)
+    )
+
+
+def test_mutate_rate_zero_keeps_weights_unchanged() -> None:
+    manager = EvolutionManager(population_size=1)
+    net = NeuralNet()
+    original_weights = net.get_weights()
+
+    manager.mutate(net, rate=0.0)
+
+    mutated_weights = net.get_weights()
+    assert all(
+        np.array_equal(before, after)
+        for before, after in zip(original_weights, mutated_weights, strict=True)
+    )
+
+
+def test_mutate_rate_one_changes_weights() -> None:
+    manager = EvolutionManager(population_size=1)
+    net = NeuralNet()
+    original_weights = net.get_weights()
+    random_state = np.random.get_state()
+
+    try:
+        np.random.seed(0)
+        manager.mutate(net, rate=1.0, scale=0.1)
+    finally:
+        np.random.set_state(random_state)
+
+    mutated_weights = net.get_weights()
+    assert any(
+        not np.array_equal(before, after)
+        for before, after in zip(original_weights, mutated_weights, strict=True)
     )
 
 
