@@ -248,7 +248,11 @@ class World:
                     update({"dt": dt})
 
         for enemy in list(self._enemies):
-            enemy.update(self._fortress, dt)
+            update_with_towers = getattr(enemy, "update_with_towers", None)
+            if callable(update_with_towers):
+                update_with_towers(self._fortress, self._towers, dt)
+            else:
+                enemy.update(self._fortress, dt)
         # 撃破・到達した敵を弾く前に撃破位置のエフェクト＋SE を焚く
         for dead in (e for e in self._enemies if e.is_dead()):
             death_hook = getattr(dead, "trigger_death_effect", None)
