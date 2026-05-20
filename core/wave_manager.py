@@ -11,6 +11,7 @@ from collections.abc import Callable
 from enum import Enum
 
 from .base_enemy import BaseEnemy
+from .constants import BOSS_WAVE_MODULO
 from .world import World
 
 
@@ -41,6 +42,7 @@ class WaveManager:
         self,
         enemy_factory: EnemyFactory | None = None,
         max_wave: int = 3,
+        boss_factory: EnemyFactory | None = None,
     ) -> None:
         self._wave: int = 0
         self._max_wave: int = max_wave
@@ -49,6 +51,9 @@ class WaveManager:
         self._spawn_timer: float = 0.0
         self._remaining_to_spawn: int = 0
         self._factory: EnemyFactory = enemy_factory or _default_enemy_factory
+        self._boss_factory: EnemyFactory | None = boss_factory
+        # 次のウェーブ開始時にボスを 1 体追加投入するフラグ
+        self._spawn_boss_pending: bool = False
 
     # ----- accessors -----
 
@@ -86,6 +91,10 @@ class WaveManager:
         self._phase = WavePhase.BATTLE
         self._remaining_to_spawn = self.BASE_SPAWN_COUNT + (self._wave - 1) * 2
         self._spawn_timer = 0.0
+        # 5の倍数ウェーブ（BOSS_WAVE_MODULO）でボスを 1 体先頭にスポーン予約
+        if self._boss_factory is not None and self._wave % BOSS_WAVE_MODULO == 0:
+            self._spawn_boss_pending = True
+            self._remaining_to_spawn += 1
 
     def _enter_summary(self) -> None:
         self._phase = WavePhase.SUMMARY
@@ -111,7 +120,11 @@ class WaveManager:
                 self._spawn_timer -= dt
                 if self._spawn_timer <= 0.0:
                     pos = random.choice(spawn_points)
-                    world.add_enemy(self._factory(pos))
+                    if self._spawn_boss_pending and self._boss_factory is not None:
+                        world.add_enemy(self._boss_factory(pos))
+                        self._spawn_boss_pending = False
+                    else:
+                        world.add_enemy(self._factory(pos))
                     self._remaining_to_spawn -= 1
                     self._spawn_timer = self.SPAWN_INTERVAL
             if self._remaining_to_spawn == 0 and not world.get_enemies():

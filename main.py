@@ -7,6 +7,10 @@
 
 import argparse
 import os
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from core.solo_game import SoloGame
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -21,8 +25,17 @@ def run_client(ip: str) -> None:
     print(f"not implemented: client mode (host={ip})")
 
 
-def run_solo() -> None:
-    """1台2プレイヤーのフォールバックモード。"""
+def create_solo_game() -> "SoloGame":
+    """1台2プレイヤーモードに必要な concrete 実装を注入して生成する。"""
+    from combat import (
+        SKILL_CYCLE,
+        WEAPON_CYCLE,
+        BossEnemy,
+        EffectManager,
+        WeaponSelectorUI,
+        create_combat_enemy,
+    )
+    from core.constants import BOSS_WAVE_MODULO
     from core.solo_game import SoloGame
     from towers import (
         FireTower,
@@ -32,7 +45,7 @@ def run_solo() -> None:
         TowerSelectorUI,
     )
 
-    game = SoloGame(
+    return SoloGame(
         tower_factories={
             "fire": FireTower,
             "ice": IceTower,
@@ -40,7 +53,19 @@ def run_solo() -> None:
             "physical": PhysicalTower,
         },
         tower_selector=TowerSelectorUI(),
+        effects=EffectManager(),
+        fighter_weapons=[weapon_cls() for weapon_cls in WEAPON_CYCLE],
+        fighter_skills=[skill_cls() for skill_cls in SKILL_CYCLE],
+        weapon_selector=WeaponSelectorUI(),
+        enemy_factory=create_combat_enemy,
+        boss_factory=BossEnemy,
+        max_wave=BOSS_WAVE_MODULO,
     )
+
+
+def run_solo() -> None:
+    """1台2プレイヤーのフォールバックモード。"""
+    game = create_solo_game()
     game.run()
 
 

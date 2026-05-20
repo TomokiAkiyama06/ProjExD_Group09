@@ -101,7 +101,66 @@ TOWER_UPGRADE_COOLDOWN_MULT: float = 0.85  # Lv ごとに ×0.85
 TOWER_SELL_REFUND_RATIO: float = 0.5  # 総投資額の 50% を返金
 
 # ===== 前線戦闘・演出（担当④） =====
-# 担当④が記述
+# 武器
+WEAPON_MELEE_DAMAGE: int = 14
+WEAPON_MELEE_RANGE: float = 60.0
+WEAPON_MELEE_COOLDOWN: float = 0.35
+WEAPON_RANGED_DAMAGE: int = 7
+WEAPON_RANGED_RANGE: float = 260.0
+WEAPON_RANGED_COOLDOWN: float = 0.25
+WEAPON_AREA_DAMAGE: int = 9
+WEAPON_AREA_RANGE: float = 180.0
+WEAPON_AREA_COOLDOWN: float = 0.9
+WEAPON_AREA_EXPLOSION_RADIUS: float = 45.0
+WEAPON_SWITCH_COOLDOWN: float = 0.2
+
+# スキル
+SKILL_DASH_COOLDOWN: float = 8.0
+SKILL_DASH_DISTANCE: float = 220.0
+SKILL_DASH_DURATION: float = 0.25
+SKILL_DASH_DAMAGE: int = 18
+SKILL_DASH_HIT_RADIUS: float = 30.0
+SKILL_AREA_COOLDOWN: float = 12.0
+SKILL_AREA_RADIUS: float = 110.0
+SKILL_AREA_DAMAGE: int = 14
+
+# ボス
+BOSS_HP_MULTIPLIER: int = 15  # 通常敵 HP の倍率
+BOSS_SPEED: float = 35.0
+BOSS_DAMAGE: int = 30
+BOSS_REWARD: int = 25
+BOSS_RADIUS: int = 26
+BOSS_SPECIAL_INTERVAL: float = 5.0  # 特殊行動（AOE）の発動間隔（秒）
+BOSS_SPECIAL_DAMAGE: int = 12
+BOSS_SPECIAL_RADIUS: float = 80.0
+BOSS_WAVE_MODULO: int = 5  # 5の倍数ウェーブでボス出現
+
+# 特殊敵
+FAST_ENEMY_HP: int = 12
+FAST_ENEMY_SPEED: float = 160.0
+FAST_ENEMY_DAMAGE: int = 4
+FAST_ENEMY_REWARD: int = 2
+SHIELDED_ENEMY_HP: int = 22
+SHIELDED_ENEMY_SHIELD: int = 30  # 盾HP（盾が割れるまでダメージ無効）
+SHIELDED_ENEMY_SPEED: float = 60.0
+SHIELDED_ENEMY_DAMAGE: int = 6
+SHIELDED_ENEMY_REWARD: int = 3
+SPECIAL_FAST_PROBABILITY: float = 0.2
+SPECIAL_SHIELDED_PROBABILITY: float = 0.1
+
+# エフェクト
+EFFECT_EXPLOSION_PARTICLES: int = 22
+EFFECT_HIT_PARTICLES: int = 8
+EFFECT_MUZZLE_PARTICLES: int = 6
+EFFECT_SHOCKWAVE_DURATION: float = 0.35
+COLOR_EFFECT_EXPLOSION: tuple[int, int, int] = (255, 180, 60)
+COLOR_EFFECT_HIT: tuple[int, int, int] = (255, 240, 200)
+COLOR_EFFECT_SHOCKWAVE: tuple[int, int, int] = (160, 200, 255)
+COLOR_EFFECT_BOSS_DEATH: tuple[int, int, int] = (255, 80, 80)
+COLOR_BOSS: tuple[int, int, int] = (200, 60, 200)
+COLOR_FAST: tuple[int, int, int] = (255, 230, 90)
+COLOR_SHIELDED: tuple[int, int, int] = (150, 180, 220)
+COLOR_SHIELD: tuple[int, int, int] = (90, 200, 240)
 
 # ===== 対戦・可視化・サウンド（担当⑤） =====
 # 担当⑤が記述

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import contextlib
 import math
+from typing import Protocol
 
 import pygame as pg
 
@@ -15,8 +16,106 @@ from .base_enemy import BaseEnemy
 from .base_player import BasePlayer
 from .base_tower import BaseTower
 from .bullet import Bullet
-from .constants import COLOR_BG, COLOR_TEXT, SCREEN_HEIGHT, SCREEN_WIDTH
+from .constants import (
+    COLOR_BG,
+    COLOR_EFFECT_EXPLOSION,
+    COLOR_EFFECT_HIT,
+    COLOR_EFFECT_SHOCKWAVE,
+    COLOR_TEXT,
+    EFFECT_EXPLOSION_PARTICLES,
+    EFFECT_HIT_PARTICLES,
+    EFFECT_MUZZLE_PARTICLES,
+    EFFECT_SHOCKWAVE_DURATION,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+)
 from .fortress import Fortress
+
+
+class EffectSink(Protocol):
+    """エフェクト発火点の最小プロトコル（実体は combat.EffectManager）。"""
+
+    def update(self, dt: float) -> None:
+        """1 フレーム分のパーティクル更新。"""
+
+    def draw(self, screen: pg.Surface) -> None:
+        """全パーティクルを描画。"""
+
+    def spawn_explosion(
+        self,
+        pos: tuple[float, float],
+        count: int = EFFECT_EXPLOSION_PARTICLES,
+        color: tuple[int, int, int] = COLOR_EFFECT_EXPLOSION,
+    ) -> None:
+        """敵撃破などの爆発エフェクト。"""
+
+    def spawn_hit(
+        self,
+        pos: tuple[float, float],
+        count: int = EFFECT_HIT_PARTICLES,
+        color: tuple[int, int, int] = COLOR_EFFECT_HIT,
+    ) -> None:
+        """ヒット時のフラッシュ。"""
+
+    def spawn_muzzle_flash(
+        self,
+        pos: tuple[float, float],
+        direction: tuple[float, float],
+        count: int = EFFECT_MUZZLE_PARTICLES,
+    ) -> None:
+        """発射時のマズルフラッシュ。"""
+
+    def spawn_shockwave(
+        self,
+        pos: tuple[float, float],
+        radius: float,
+        color: tuple[int, int, int] = COLOR_EFFECT_SHOCKWAVE,
+        duration: float = EFFECT_SHOCKWAVE_DURATION,
+    ) -> None:
+        """範囲攻撃の波紋。"""
+
+
+class _NullEffects:
+    """EffectSink を未注入時のフォールバック（全 no-op）。"""
+
+    def update(self, dt: float) -> None:
+        _ = dt
+
+    def draw(self, screen: pg.Surface) -> None:
+        _ = screen
+
+    def spawn_explosion(
+        self,
+        pos: tuple[float, float],
+        count: int = EFFECT_EXPLOSION_PARTICLES,
+        color: tuple[int, int, int] = COLOR_EFFECT_EXPLOSION,
+    ) -> None:
+        _ = pos, count, color
+
+    def spawn_hit(
+        self,
+        pos: tuple[float, float],
+        count: int = EFFECT_HIT_PARTICLES,
+        color: tuple[int, int, int] = COLOR_EFFECT_HIT,
+    ) -> None:
+        _ = pos, count, color
+
+    def spawn_muzzle_flash(
+        self,
+        pos: tuple[float, float],
+        direction: tuple[float, float],
+        count: int = EFFECT_MUZZLE_PARTICLES,
+    ) -> None:
+        _ = pos, direction, count
+
+    def spawn_shockwave(
+        self,
+        pos: tuple[float, float],
+        radius: float,
+        color: tuple[int, int, int] = COLOR_EFFECT_SHOCKWAVE,
+        duration: float = EFFECT_SHOCKWAVE_DURATION,
+    ) -> None:
+        _ = pos, radius, color, duration
 
 
 class World:
@@ -30,6 +129,7 @@ class World:
         self,
         spawn_points: list[tuple[float, float]] | None = None,
         fortress: Fortress | None = None,
+        effects: EffectSink | None = None,
     ) -> None:
         if spawn_points is None:
             spawn_points = [
@@ -43,11 +143,15 @@ class World:
         self._enemies: list[BaseEnemy] = []
         self._towers: list[BaseTower] = []
         self._bullets: list[Bullet] = []
+        self._effects: EffectSink = effects if effects is not None else _NullEffects()
 
     # ----- accessors -----
 
     def get_fortress(self) -> Fortress:
         return self._fortress
+
+    def get_effects(self) -> EffectSink:
+        return self._effects
 
     def get_spawn_points(self) -> list[tuple[float, float]]:
         return list(self._spawn_points)
@@ -111,6 +215,9 @@ class World:
 
         for enemy in list(self._enemies):
             enemy.update(self._fortress, dt)
+        # 撃破・到達した敵を弾く前に撃破位置のエフェクトを焚く
+        for dead in (e for e in self._enemies if e.is_dead()):
+            self._effects.spawn_explosion(dead.get_pos())
         self._enemies = [
             e for e in self._enemies if not e.is_dead() and not e.has_reached_fortress()
         ]
@@ -124,6 +231,9 @@ class World:
             bullet.update(dt)
             bullet.check_hit(self._enemies)
         self._bullets = [b for b in self._bullets if not b.is_consumed()]
+
+        # エフェクトのタイムステップ
+        self._effects.update(dt)
 
     def draw(self, screen: pg.Surface) -> None:
         """背景・出現口・エンティティを描画する。"""
@@ -147,3 +257,4 @@ class World:
             draw = getattr(player, "draw", None)
             if callable(draw):
                 draw(screen)
+        self._effects.draw(screen)

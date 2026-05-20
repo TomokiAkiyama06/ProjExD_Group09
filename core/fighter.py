@@ -1,22 +1,28 @@
 """前線役（プレイヤー2）。
 
-WASDで移動、Shiftでダッシュ、Jで通常攻撃（前方に弾を撃つ）、Kでスキル
-（クールタイム枠だけ・中身は担当④）、Lで近接タワーの修理（リソース消費）。
+WASDで移動、Shiftでダッシュ、Jで通常攻撃（現在の武器を発射）、Kでスキル発動、
+Q/Eで武器切替、5/6でスキル切替、Lで近接タワー修理枠。
+
+武器・スキルは外部から注入する（`combat.weapons` / `combat.fighter_skills` の
+インスタンス）ことで `core → combat` の循環を回避している。
 """
 
 from __future__ import annotations
 
 import math
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 import pygame as pg
 
-from .base_enemy import BaseEnemy
 from .base_player import BasePlayer
 from .base_tower import BaseTower
 from .bullet import Bullet
-from .constants import COLOR_PLAYER, PLAYER_MAX_HP, TOWER_BASE_DAMAGE
+from .constants import COLOR_PLAYER, PLAYER_MAX_HP, WEAPON_SWITCH_COOLDOWN
 from .world import World
+
+if TYPE_CHECKING:
+    from combat.fighter_skills import BaseSkill
+    from combat.weapons import BaseWeapon
 
 
 class Fighter(BasePlayer):
@@ -24,12 +30,6 @@ class Fighter(BasePlayer):
 
     BASE_SPEED: float = 220.0
     DASH_MULTIPLIER: float = 1.8
-    ATTACK_COOLDOWN: float = 0.4
-    ATTACK_DAMAGE: int = TOWER_BASE_DAMAGE
-    ATTACK_RANGE: float = 220.0
-    SKILL_COOLDOWN: float = 4.0
-    REPAIR_AMOUNT: int = 20
-    REPAIR_COST: int = 10
     REPAIR_RANGE: float = 40.0
     DEFAULT_RADIUS: int = 14
 
@@ -45,14 +45,20 @@ class Fighter(BasePlayer):
         self,
         pos: tuple[float, float] | None = None,
         max_hp: int = PLAYER_MAX_HP,
+        weapons: list[BaseWeapon] | None = None,
+        skills: list[BaseSkill] | None = None,
     ) -> None:
         super().__init__(player_id=2, pos=pos, max_hp=max_hp)
         self._speed = self.BASE_SPEED
-        self._attack_cooldown_left: float = 0.0
-        self._skill_cooldown_left: float = 0.0
         self._is_dashing: bool = False
         self._facing: tuple[float, float] = (1.0, 0.0)
         self._pending_bullets: list[Bullet] = []
+        # 武器・スキル
+        self._weapons: list[BaseWeapon] = list(weapons or [])
+        self._weapon_index: int = 0
+        self._weapon_switch_cooldown_left: float = 0.0
+        self._skills: list[BaseSkill] = list(skills or [])
+        self._skill_index: int = 0
 
     # ----- accessors -----
 
@@ -62,24 +68,69 @@ class Fighter(BasePlayer):
     def get_facing(self) -> tuple[float, float]:
         return self._facing
 
+    def get_current_weapon(self) -> BaseWeapon | None:
+        if not self._weapons:
+            return None
+        return self._weapons[self._weapon_index % len(self._weapons)]
+
+    def get_current_skill(self) -> BaseSkill | None:
+        if not self._skills:
+            return None
+        return self._skills[self._skill_index % len(self._skills)]
+
+    def get_weapons(self) -> list[BaseWeapon]:
+        return list(self._weapons)
+
+    def get_skills(self) -> list[BaseSkill]:
+        return list(self._skills)
+
     def get_attack_cooldown_left(self) -> float:
-        return self._attack_cooldown_left
+        """現在の武器の残クールタイム。武器が無いなら 0。"""
+        weapon = self.get_current_weapon()
+        return weapon.get_cooldown_left() if weapon is not None else 0.0
 
     def get_skill_cooldown_left(self) -> float:
-        return self._skill_cooldown_left
+        """現在のスキルの残クールタイム。"""
+        skill = self.get_current_skill()
+        return skill.get_cooldown_left() if skill is not None else 0.0
+
+    def is_invincible(self) -> bool:
+        skill = self.get_current_skill()
+        return bool(skill is not None and getattr(skill, "is_invincible", lambda: False)())
+
+    # ----- mutators -----
+
+    def cycle_weapon(self, delta: int = 1) -> None:
+        if not self._weapons or self._weapon_switch_cooldown_left > 0:
+            return
+        self._weapon_index = (self._weapon_index + delta) % len(self._weapons)
+        self._weapon_switch_cooldown_left = WEAPON_SWITCH_COOLDOWN
+
+    def cycle_skill(self, delta: int = 1) -> None:
+        if not self._skills:
+            return
+        self._skill_index = (self._skill_index + delta) % len(self._skills)
 
     # ----- event-based input -----
 
     def handle_event(self, event: pg.event.Event, world: World) -> None:
-        """単発イベント（J/K/L のキー押下）を処理する。"""
+        """単発イベント（J / K / L / Q / E / 5 / 6 のキー押下）を処理する。"""
         if event.type != pg.KEYDOWN:
             return
         if event.key == pg.K_j:
             self._try_attack(world)
         elif event.key == pg.K_k:
-            self._try_skill()
+            self._try_skill(world)
         elif event.key == pg.K_l:
             self._try_repair(world)
+        elif event.key == pg.K_q:
+            self.cycle_weapon(-1)
+        elif event.key == pg.K_e:
+            self.cycle_weapon(1)
+        elif event.key == pg.K_5:
+            self.cycle_skill(-1)
+        elif event.key == pg.K_6:
+            self.cycle_skill(1)
 
     # ----- continuous input -----
 
@@ -90,7 +141,6 @@ class Fighter(BasePlayer):
         world: World,
     ) -> None:
         """連続入力（WASD移動、Shiftダッシュ）と内部タイマーを更新する。"""
-        _ = world  # 引数を将来の壁判定などに残すために保持
         self._is_dashing = any(keys[k] for k in self.DASH_KEYS)
         speed_mult = self.DASH_MULTIPLIER if self._is_dashing else 1.0
 
@@ -107,8 +157,12 @@ class Fighter(BasePlayer):
             self._facing = (dx, dy)
             self.update({"dt": dt, "dx": dx * speed_mult, "dy": dy * speed_mult})
 
-        self._attack_cooldown_left = max(0.0, self._attack_cooldown_left - dt)
-        self._skill_cooldown_left = max(0.0, self._skill_cooldown_left - dt)
+        # 武器・スキルのクールダウン進行
+        for weapon in self._weapons:
+            weapon.update(dt)
+        for skill in self._skills:
+            skill.update(dt, self, world)
+        self._weapon_switch_cooldown_left = max(0.0, self._weapon_switch_cooldown_left - dt)
 
     # ----- pending output -----
 
@@ -121,44 +175,29 @@ class Fighter(BasePlayer):
     # ----- internal -----
 
     def _try_attack(self, world: World) -> None:
-        if self._attack_cooldown_left > 0:
+        weapon = self.get_current_weapon()
+        if weapon is None:
             return
-        self._attack_cooldown_left = self.ATTACK_COOLDOWN
-        target = self._find_attack_target(world)
-        if target is None:
+        target = weapon.find_target(self._pos, world.get_enemies())
+        bullets = weapon.fire(self._pos, target, self._facing)
+        if not bullets:
             return
-        self._pending_bullets.append(
-            Bullet(pos=self._pos, target=target, damage=self.ATTACK_DAMAGE)
-        )
+        world.get_effects().spawn_muzzle_flash(self._pos, self._facing)
+        self._pending_bullets.extend(bullets)
 
-    def _try_skill(self) -> None:
-        # スキル本体は担当④が実装する。ここではクールタイムを進めるだけ。
-        if self._skill_cooldown_left > 0:
+    def _try_skill(self, world: World) -> None:
+        skill = self.get_current_skill()
+        if skill is None:
             return
-        self._skill_cooldown_left = self.SKILL_COOLDOWN
+        skill.activate(self, world)
 
     def _try_repair(self, world: World) -> None:
-        # 近接タワーを修理。リソース管理は今は Fighter 自身が持たず、World 経由で
-        # 後付け可能にするため、ここではタワーHP（_max_hp等）を直接いじらない。
-        # 担当③で BaseTower にHPを追加した後に詳細実装する想定の枠だけ用意。
+        # 近接タワーを修理。リソース管理は今は Fighter 自身が持たず、後付け可能にする
+        # ため、ここでは枠だけ用意する。本体は担当③で BaseTower に HP を追加後に接続。
         nearest = self._nearest_tower_within_range(world)
         if nearest is None:
             return
-        # 枠のみ。実 HP 回復は担当③で BaseTower に HP を追加してから接続する。
-
-    def _find_attack_target(self, world: World) -> BaseEnemy | None:
-        x, y = self._pos
-        best = None
-        best_dist = self.ATTACK_RANGE
-        for enemy in world.get_enemies():
-            if enemy.is_dead():
-                continue
-            ex, ey = enemy.get_pos()
-            d = math.hypot(ex - x, ey - y)
-            if d <= best_dist:
-                best_dist = d
-                best = enemy
-        return best
+        _ = nearest
 
     def _nearest_tower_within_range(self, world: World) -> BaseTower | None:
         x, y = self._pos
@@ -181,3 +220,6 @@ class Fighter(BasePlayer):
         fx, fy = self._facing
         end = (int(x + fx * self.DEFAULT_RADIUS), int(y + fy * self.DEFAULT_RADIUS))
         pg.draw.line(screen, COLOR_PLAYER, (x, y), end, width=3)
+        # 無敵中（ダッシュ攻撃中など）は外周にリング
+        if self.is_invincible():
+            pg.draw.circle(screen, (255, 255, 255), (x, y), self.DEFAULT_RADIUS + 4, width=2)
