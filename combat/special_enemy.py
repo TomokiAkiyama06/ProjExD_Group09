@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import random
 from typing import ClassVar
 
 import pygame as pg
@@ -26,6 +27,8 @@ try:
         SHIELDED_ENEMY_REWARD,
         SHIELDED_ENEMY_SHIELD,
         SHIELDED_ENEMY_SPEED,
+        SPECIAL_FAST_PROBABILITY,
+        SPECIAL_SHIELDED_PROBABILITY,
     )
 except ImportError:
     from core.base_enemy import BaseEnemy
@@ -42,6 +45,8 @@ except ImportError:
         SHIELDED_ENEMY_REWARD,
         SHIELDED_ENEMY_SHIELD,
         SHIELDED_ENEMY_SPEED,
+        SPECIAL_FAST_PROBABILITY,
+        SPECIAL_SHIELDED_PROBABILITY,
     )
 
 
@@ -116,3 +121,30 @@ class SpecialEnemy(FastEnemy):
     """既存呼び出し互換のため `FastEnemy` のエイリアス（旧名）。"""
 
     special_type: ClassVar[str] = "runner"
+
+    def __init__(
+        self,
+        pos: tuple[float, float] = (0.0, 0.0),
+        hp: int = FAST_ENEMY_HP,
+        speed: float = FAST_ENEMY_SPEED,
+        damage: int = FAST_ENEMY_DAMAGE,
+        reward: int = FAST_ENEMY_REWARD,
+    ) -> None:
+        BaseEnemy.__init__(
+            self,
+            pos=pos,
+            hp=hp,
+            speed=speed,
+            damage=damage,
+            reward=reward,
+        )
+
+
+def create_combat_enemy(pos: tuple[float, float], roll: float | None = None) -> BaseEnemy:
+    """通常ウェーブ用に、確率で特殊敵を混ぜて生成する。"""
+    value = random.random() if roll is None else roll
+    if value < SPECIAL_FAST_PROBABILITY:
+        return FastEnemy(pos=pos)
+    if value < SPECIAL_FAST_PROBABILITY + SPECIAL_SHIELDED_PROBABILITY:
+        return ShieldedEnemy(pos=pos)
+    return BaseEnemy(pos=pos)

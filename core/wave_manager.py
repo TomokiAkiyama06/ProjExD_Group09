@@ -41,7 +41,7 @@ class WaveManager:
     def __init__(
         self,
         enemy_factory: EnemyFactory | None = None,
-        max_wave: int = BOSS_WAVE_MODULO,
+        max_wave: int = 3,
         boss_factory: EnemyFactory | None = None,
     ) -> None:
         self._wave: int = 0

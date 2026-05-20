@@ -17,7 +17,7 @@ from combat.fighter_skills import (
     BaseSkill,
     DashAttackSkill,
 )
-from combat.special_enemy import FastEnemy, ShieldedEnemy
+from combat.special_enemy import FastEnemy, ShieldedEnemy, SpecialEnemy, create_combat_enemy
 from combat.weapons import (
     WEAPON_CYCLE,
     AreaBullet,
@@ -200,6 +200,23 @@ def test_boss_special_burst_damages_player() -> None:
     assert fighter.get_hp() < 100
 
 
+def test_boss_special_burst_skips_invincible_player() -> None:
+    dash = DashAttackSkill()
+    boss = BossEnemy(pos=(200.0, 100.0))
+    fighter = Fighter(pos=(200.0, 100.0), skills=[dash])
+    world = World()
+    world.add_player(fighter)
+
+    assert dash.activate(fighter, world)
+    assert fighter.is_invincible()
+    start_hp = fighter.get_hp()
+    boss._special_timer = 0.0
+
+    boss.update_with_world(1.0 / 60.0, world)
+
+    assert fighter.get_hp() == start_hp
+
+
 def test_boss_world_tick_does_not_move_boss() -> None:
     boss = BossEnemy(pos=(200.0, 100.0))
     world = World()
@@ -254,6 +271,32 @@ def test_shielded_enemy_takes_damage_after_shield_broken() -> None:
     assert shielded.get_hp() == initial_hp - 5
 
 
+def test_special_enemy_preserves_legacy_constructor_signature() -> None:
+    enemy = SpecialEnemy(
+        pos=(10.0, 20.0),
+        hp=44,
+        speed=77.0,
+        damage=9,
+        reward=3,
+    )
+
+    assert enemy.get_pos() == (10.0, 20.0)
+    assert enemy.get_hp() == 44
+    assert enemy.get_speed() == 77.0
+    assert enemy.get_damage() == 9
+    assert enemy.get_reward() == 3
+
+
+def test_create_combat_enemy_uses_probability_roll() -> None:
+    fast = create_combat_enemy((0.0, 0.0), roll=0.0)
+    shielded = create_combat_enemy((0.0, 0.0), roll=0.25)
+    base = create_combat_enemy((0.0, 0.0), roll=0.95)
+
+    assert isinstance(fast, FastEnemy)
+    assert isinstance(shielded, ShieldedEnemy)
+    assert not isinstance(base, (FastEnemy, ShieldedEnemy))
+
+
 # ===== integration smoke =====
 
 
@@ -287,14 +330,16 @@ def test_create_solo_game_supplies_combat_defaults() -> None:
 
     assert fighter.get_current_weapon() is not None
     assert fighter.get_current_skill() is not None
+    assert game._wave_manager.get_max_wave() >= BOSS_WAVE_MODULO
+    assert game._wave_manager._factory is create_combat_enemy
 
     pg.quit()
 
 
-def test_wave_manager_default_reaches_boss_wave() -> None:
+def test_wave_manager_default_stays_at_three_without_solo_bootstrap() -> None:
     manager = WaveManager(boss_factory=BossEnemy)
 
-    assert manager.get_max_wave() >= BOSS_WAVE_MODULO
+    assert manager.get_max_wave() == 3
 
 
 if __name__ == "__main__":
@@ -312,12 +357,15 @@ if __name__ == "__main__":
     test_area_skill_damages_enemies_in_range()
     test_boss_has_high_hp_and_special_action()
     test_boss_special_burst_damages_player()
+    test_boss_special_burst_skips_invincible_player()
     test_boss_world_tick_does_not_move_boss()
     test_boss_death_effect_runs_once()
     test_fast_enemy_is_fast()
     test_shielded_enemy_absorbs_damage()
     test_shielded_enemy_takes_damage_after_shield_broken()
+    test_special_enemy_preserves_legacy_constructor_signature()
+    test_create_combat_enemy_uses_probability_roll()
     test_fighter_with_weapons_and_skills()
     test_create_solo_game_supplies_combat_defaults()
-    test_wave_manager_default_reaches_boss_wave()
+    test_wave_manager_default_stays_at_three_without_solo_bootstrap()
     print("All combat tests passed.")

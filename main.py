@@ -33,7 +33,9 @@ def create_solo_game() -> "SoloGame":
         BossEnemy,
         EffectManager,
         WeaponSelectorUI,
+        create_combat_enemy,
     )
+    from core.constants import BOSS_WAVE_MODULO
     from core.solo_game import SoloGame
     from towers import (
         FireTower,
@@ -55,7 +57,9 @@ def create_solo_game() -> "SoloGame":
         fighter_weapons=[weapon_cls() for weapon_cls in WEAPON_CYCLE],
         fighter_skills=[skill_cls() for skill_cls in SKILL_CYCLE],
         weapon_selector=WeaponSelectorUI(),
+        enemy_factory=create_combat_enemy,
         boss_factory=BossEnemy,
+        max_wave=BOSS_WAVE_MODULO,
     )
 
 

@@ -62,6 +62,7 @@ class SoloGame(Game):
         weapon_selector: WeaponSelector | None = None,
         enemy_factory: EnemyFactory | None = None,
         boss_factory: EnemyFactory | None = None,
+        max_wave: int = 3,
     ) -> None:
         super().__init__()
         self._world: World = World(effects=effects)
@@ -78,6 +79,7 @@ class SoloGame(Game):
         self._world.add_player(self._fighter)
         self._wave_manager: WaveManager = WaveManager(
             enemy_factory=enemy_factory,
+            max_wave=max_wave,
             boss_factory=boss_factory,
         )
         self._hud: BaseHud = BaseHud()

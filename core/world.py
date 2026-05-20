@@ -16,7 +16,19 @@ from .base_enemy import BaseEnemy
 from .base_player import BasePlayer
 from .base_tower import BaseTower
 from .bullet import Bullet
-from .constants import COLOR_BG, COLOR_TEXT, SCREEN_HEIGHT, SCREEN_WIDTH
+from .constants import (
+    COLOR_BG,
+    COLOR_EFFECT_EXPLOSION,
+    COLOR_EFFECT_HIT,
+    COLOR_EFFECT_SHOCKWAVE,
+    COLOR_TEXT,
+    EFFECT_EXPLOSION_PARTICLES,
+    EFFECT_HIT_PARTICLES,
+    EFFECT_MUZZLE_PARTICLES,
+    EFFECT_SHOCKWAVE_DURATION,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+)
 from .fortress import Fortress
 
 
@@ -29,16 +41,27 @@ class EffectSink(Protocol):
     def draw(self, screen: pg.Surface) -> None:
         """全パーティクルを描画。"""
 
-    def spawn_explosion(self, pos: tuple[float, float]) -> None:
+    def spawn_explosion(
+        self,
+        pos: tuple[float, float],
+        count: int = EFFECT_EXPLOSION_PARTICLES,
+        color: tuple[int, int, int] = COLOR_EFFECT_EXPLOSION,
+    ) -> None:
         """敵撃破などの爆発エフェクト。"""
 
-    def spawn_hit(self, pos: tuple[float, float]) -> None:
+    def spawn_hit(
+        self,
+        pos: tuple[float, float],
+        count: int = EFFECT_HIT_PARTICLES,
+        color: tuple[int, int, int] = COLOR_EFFECT_HIT,
+    ) -> None:
         """ヒット時のフラッシュ。"""
 
     def spawn_muzzle_flash(
         self,
         pos: tuple[float, float],
         direction: tuple[float, float],
+        count: int = EFFECT_MUZZLE_PARTICLES,
     ) -> None:
         """発射時のマズルフラッシュ。"""
 
@@ -46,7 +69,8 @@ class EffectSink(Protocol):
         self,
         pos: tuple[float, float],
         radius: float,
-        color: tuple[int, int, int] | None = None,
+        color: tuple[int, int, int] = COLOR_EFFECT_SHOCKWAVE,
+        duration: float = EFFECT_SHOCKWAVE_DURATION,
     ) -> None:
         """範囲攻撃の波紋。"""
 
@@ -63,16 +87,16 @@ class _NullEffects:
     def spawn_explosion(
         self,
         pos: tuple[float, float],
-        count: int | None = None,
-        color: tuple[int, int, int] | None = None,
+        count: int = EFFECT_EXPLOSION_PARTICLES,
+        color: tuple[int, int, int] = COLOR_EFFECT_EXPLOSION,
     ) -> None:
         _ = pos, count, color
 
     def spawn_hit(
         self,
         pos: tuple[float, float],
-        count: int | None = None,
-        color: tuple[int, int, int] | None = None,
+        count: int = EFFECT_HIT_PARTICLES,
+        color: tuple[int, int, int] = COLOR_EFFECT_HIT,
     ) -> None:
         _ = pos, count, color
 
@@ -80,7 +104,7 @@ class _NullEffects:
         self,
         pos: tuple[float, float],
         direction: tuple[float, float],
-        count: int | None = None,
+        count: int = EFFECT_MUZZLE_PARTICLES,
     ) -> None:
         _ = pos, direction, count
 
@@ -88,8 +112,8 @@ class _NullEffects:
         self,
         pos: tuple[float, float],
         radius: float,
-        color: tuple[int, int, int] | None = None,
-        duration: float | None = None,
+        color: tuple[int, int, int] = COLOR_EFFECT_SHOCKWAVE,
+        duration: float = EFFECT_SHOCKWAVE_DURATION,
     ) -> None:
         _ = pos, radius, color, duration
 

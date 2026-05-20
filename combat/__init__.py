@@ -9,7 +9,7 @@ from .fighter_skills import (
     DashAttackSkill,
     draw_skill_indicator,
 )
-from .special_enemy import FastEnemy, ShieldedEnemy, SpecialEnemy
+from .special_enemy import FastEnemy, ShieldedEnemy, SpecialEnemy, create_combat_enemy
 from .weapon_selector_ui import WeaponSelectorUI
 from .weapons import (
     WEAPON_CYCLE,
@@ -39,5 +39,6 @@ __all__ = [
     "Shockwave",
     "SpecialEnemy",
     "WeaponSelectorUI",
+    "create_combat_enemy",
     "draw_skill_indicator",
 ]

@@ -110,6 +110,9 @@ class BossEnemy(BaseEnemy):
             px, py = player.get_pos()
             if math.hypot(px - x, py - y) > BOSS_SPECIAL_RADIUS:
                 continue
+            is_invincible = getattr(player, "is_invincible", None)
+            if callable(is_invincible) and is_invincible():
+                continue
             take = getattr(player, "set_hp", None)
             current = player.get_hp() if hasattr(player, "get_hp") else None
             if callable(take) and current is not None:
