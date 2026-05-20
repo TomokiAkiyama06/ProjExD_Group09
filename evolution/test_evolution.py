@@ -147,6 +147,64 @@ def test_world_passes_towers_to_evolved_enemy() -> None:
     assert brain.last_input[4] == (tower.get_pos()[1] - enemy.get_pos()[1]) / SCREEN_HEIGHT
 
 
+def test_early_generation_moves_toward_nearest_tower() -> None:
+    """初期世代（閾値以下）はNNを使わず最近傍タワーへ向かうことを確認する。"""
+    import math
+
+    brain = _FixedBrain((0.0, 0.0))  # NN出力は原点（呼ばれないはず）
+    enemy = EvolvedEnemy(
+        pos=(100.0, 300.0),
+        brain=brain,
+        speed=60.0,
+        generation=EARLY_GENERATION_THRESHOLD,
+    )
+    tower = BaseTower(pos=(200.0, 300.0))  # 真横にタワー
+    fortress = Fortress(pos=(900.0, 300.0))
+
+    enemy.update_with_towers(fortress, [tower], dt=1.0)
+
+    ex, ey = enemy.get_pos()
+    assert ex > 100.0, "タワー方向（+x）に移動しているはず"
+    assert abs(ey - 300.0) < 1e-9, "y座標は変わらないはず"
+    assert brain.last_input is None, "早期世代ではNNは呼ばれないはず"
+
+
+def test_early_generation_falls_back_to_nn_when_no_towers() -> None:
+    """初期世代でもタワーがなければNNで移動することを確認する。"""
+    brain = _FixedBrain((1.0, 0.0))
+    enemy = EvolvedEnemy(
+        pos=(100.0, 100.0),
+        brain=brain,
+        speed=60.0,
+        generation=0,
+    )
+    fortress = Fortress(pos=(900.0, 100.0))
+
+    enemy.update_with_towers(fortress, [], dt=0.5)
+
+    assert enemy.get_pos() == (130.0, 100.0)
+    assert brain.last_input is not None, "タワーなし時はNNにフォールバックするはず"
+
+
+def test_later_generation_uses_nn_even_with_towers() -> None:
+    """閾値を超えた世代はタワーがあってもNNを使うことを確認する。"""
+    brain = _FixedBrain((0.0, 1.0))  # 真下に移動するNN出力
+    enemy = EvolvedEnemy(
+        pos=(100.0, 100.0),
+        brain=brain,
+        speed=60.0,
+        generation=EARLY_GENERATION_THRESHOLD + 1,
+    )
+    tower = BaseTower(pos=(200.0, 100.0))  # 真横にタワー
+    fortress = Fortress(pos=(900.0, 100.0))
+
+    enemy.update_with_towers(fortress, [tower], dt=0.5)
+
+    ex, ey = enemy.get_pos()
+    assert ey > 100.0, "NNの出力（+y方向）に移動しているはず"
+    assert brain.last_input is not None, "閾値超えではNNが呼ばれるはず"
+
+
 def test_evolution_manager_uses_default_neural_net_shape() -> None:
     manager = EvolutionManager(population_size=2)
     assert manager.population[0].input_size == DEFAULT_INPUT_SIZE
