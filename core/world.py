@@ -251,6 +251,10 @@ class World:
             enemy.update(self._fortress, dt)
         # 撃破・到達した敵を弾く前に撃破位置のエフェクト＋SE を焚く
         for dead in (e for e in self._enemies if e.is_dead()):
+            death_hook = getattr(dead, "trigger_death_effect", None)
+            if callable(death_hook):
+                death_hook(self)
+                continue
             self._effects.spawn_explosion(dead.get_pos())
             self._sound.play_se(SE_ENEMY_DIE)
         self._enemies = [

@@ -122,16 +122,21 @@ class VersusGame:
 
     SIDES: tuple[str, ...] = ("left", "right")
 
-    def __init__(
+    def __init__(  # noqa: PLR0913 - 対戦モードはネット結線用の注入点が複数ある
         self,
         enemy_factory: EnemyFactory | None = None,
         boss_factory: EnemyFactory | None = None,
         send_cost: int = VERSUS_SEND_COST,
         sound: SoundSink | None = None,
+        local_side: str = "left",
         on_send_enemy: Callable[[str, BaseEnemy], None] | None = None,
     ) -> None:
+        if local_side not in self.SIDES:
+            msg = f"unknown local side: {local_side!r}"
+            raise ValueError(msg)
         self._send_cost: int = max(0, int(send_cost))
         self._sound: SoundSink | None = sound
+        self._local_side: str = local_side
         # 拠点座標を左右に対称配置
         left_spawn = [
             (SCREEN_WIDTH * 0.20, SCREEN_HEIGHT * 0.30),
@@ -179,6 +184,9 @@ class VersusGame:
 
     def get_send_cost(self) -> int:
         return self._send_cost
+
+    def get_local_side(self) -> str:
+        return self._local_side
 
     def is_finished(self) -> bool:
         return self._winner is not None
@@ -241,8 +249,8 @@ class VersusGame:
             if self.get_field(side).get_fortress().is_destroyed():
                 self._winner = self.opponent_of(side)
                 if self._sound is not None:
-                    self._sound.play_se(SE_VICTORY)
-                    self._sound.play_se(SE_DEFEAT)
+                    result_se = SE_VICTORY if self._winner == self._local_side else SE_DEFEAT
+                    self._sound.play_se(result_se)
                 return
 
     # ----- draw -----

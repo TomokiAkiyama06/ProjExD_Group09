@@ -15,10 +15,12 @@ from core.base_tower import BaseTower
 from core.builder import Builder
 from core.constants import (
     SE_BOSS_DIE,
+    SE_DEFEAT,
     SE_ENEMY_DIE,
     SE_TOWER_FIRE,
     SE_TOWER_PLACE,
     SE_VERSUS_SEND,
+    SE_VICTORY,
     SE_WAVE_START,
 )
 from core.fortress import Fortress
@@ -211,6 +213,28 @@ def test_versus_winner_decided_when_fortress_destroyed() -> None:
     assert game.get_winner() == "right"
 
 
+def test_versus_winner_plays_one_result_se_for_local_winner() -> None:
+    rec = _RecordingSound()
+    game = VersusGame(sound=rec, local_side="right")
+    left_fortress = game.get_field("left").get_fortress()
+    left_fortress.take_damage(left_fortress.get_max_hp())
+
+    game.update(1.0 / 60.0)
+
+    assert rec.se == [SE_VICTORY]
+
+
+def test_versus_winner_plays_one_result_se_for_local_loser() -> None:
+    rec = _RecordingSound()
+    game = VersusGame(sound=rec, local_side="left")
+    left_fortress = game.get_field("left").get_fortress()
+    left_fortress.take_damage(left_fortress.get_max_hp())
+
+    game.update(1.0 / 60.0)
+
+    assert rec.se == [SE_DEFEAT]
+
+
 def test_versus_apply_remote_event_spawns_enemy() -> None:
     game = VersusGame()
     right_before = len(game.get_field("right").get_world().get_enemies())
@@ -285,6 +309,18 @@ def test_boss_death_effect_plays_se() -> None:
     assert SE_BOSS_DIE in rec.se
 
 
+def test_world_uses_boss_death_hook_without_generic_enemy_die() -> None:
+    rec = _RecordingSound()
+    world = World(sound=rec)
+    boss = BossEnemy(pos=(200.0, 100.0))
+    world.add_enemy(boss)
+    boss.take_damage(99999)
+
+    world.update(1.0 / 60.0)
+
+    assert rec.se == [SE_BOSS_DIE]
+
+
 if __name__ == "__main__":
     test_evolution_graph_add_and_latest()
     test_evolution_graph_max_records_trims_old()
@@ -298,6 +334,8 @@ if __name__ == "__main__":
     test_versus_send_enemy_consumes_gold_and_spawns_on_opponent()
     test_versus_send_enemy_fails_with_insufficient_gold()
     test_versus_winner_decided_when_fortress_destroyed()
+    test_versus_winner_plays_one_result_se_for_local_winner()
+    test_versus_winner_plays_one_result_se_for_local_loser()
     test_versus_apply_remote_event_spawns_enemy()
     test_player_field_independent_gold()
     test_world_plays_enemy_die_when_dead()
@@ -305,4 +343,5 @@ if __name__ == "__main__":
     test_builder_plays_tower_place()
     test_wave_manager_plays_wave_start()
     test_boss_death_effect_plays_se()
+    test_world_uses_boss_death_hook_without_generic_enemy_die()
     print("All presentation tests passed.")
