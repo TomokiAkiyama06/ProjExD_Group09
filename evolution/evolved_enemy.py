@@ -101,6 +101,12 @@ class EvolvedEnemy(BaseEnemy):
 
         step = self.get_effective_speed() * dt
         x, y = self._pos
+        fx, fy = fortress.get_pos()
+        dist = math.hypot(fx - x, fy - y)
+        if step >= dist - self.CONTACT_DISTANCE:
+            fortress.take_damage(self._damage)
+            self._reached = True
+            return
         self._pos = (x + vx * step, y + vy * step)
         self._handle_fortress_contact(fortress)
 
