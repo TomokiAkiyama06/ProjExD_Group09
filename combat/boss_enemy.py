@@ -26,6 +26,8 @@ try:
         COLOR_EFFECT_BOSS_DEATH,
         COLOR_EFFECT_SHOCKWAVE,
         ENEMY_BASE_HP,
+        SE_BOSS_DIE,
+        SE_BOSS_SPECIAL,
     )
     from ..core.fortress import Fortress
     from ..core.world import World
@@ -45,6 +47,8 @@ except ImportError:
         COLOR_EFFECT_BOSS_DEATH,
         COLOR_EFFECT_SHOCKWAVE,
         ENEMY_BASE_HP,
+        SE_BOSS_DIE,
+        SE_BOSS_SPECIAL,
     )
     from core.fortress import Fortress
     from core.world import World
@@ -86,6 +90,7 @@ class BossEnemy(BaseEnemy):
             radius=BOSS_SPECIAL_RADIUS,
             color=COLOR_EFFECT_BOSS_DEATH,
         )
+        world.get_sound().play_se(SE_BOSS_DIE)
 
     def update_with_world(self, dt: float, world: World) -> None:
         """World 連携が必要な特殊行動（周囲AOE）だけを処理する。"""
@@ -97,12 +102,13 @@ class BossEnemy(BaseEnemy):
         self._special_timer = BOSS_SPECIAL_INTERVAL
         # 周囲のプレイヤーにダメージ
         self._burst_damage_players(world.get_players())
-        # 視覚エフェクト
+        # 視覚エフェクト＋ SE
         world.get_effects().spawn_shockwave(
             self._pos,
             radius=BOSS_SPECIAL_RADIUS,
             color=COLOR_EFFECT_SHOCKWAVE,
         )
+        world.get_sound().play_se(SE_BOSS_SPECIAL)
 
     def _burst_damage_players(self, players: list[BasePlayer]) -> None:
         x, y = self._pos

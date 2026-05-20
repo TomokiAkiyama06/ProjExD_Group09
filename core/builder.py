@@ -14,7 +14,7 @@ import pygame as pg
 
 from .base_player import BasePlayer
 from .base_tower import BaseTower
-from .constants import COLOR_PLAYER, INITIAL_GOLD
+from .constants import COLOR_PLAYER, INITIAL_GOLD, SE_TOWER_PLACE
 from .world import World
 
 TowerFactory = Callable[..., BaseTower]
@@ -102,6 +102,7 @@ class Builder(BasePlayer):
         tower = factory(pos=fpos, purchase_cost=self._tower_cost)
         world.add_tower(tower)
         self._gold -= self._tower_cost
+        world.get_sound().play_se(SE_TOWER_PLACE)
         return True
 
     def _select_tower_at(self, world: World, pos: tuple[int, int]) -> None:
