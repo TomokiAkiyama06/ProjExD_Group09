@@ -149,8 +149,6 @@ def test_world_passes_towers_to_evolved_enemy() -> None:
 
 def test_early_generation_moves_toward_nearest_tower() -> None:
     """初期世代（閾値以下）はNNを使わず最近傍タワーへ向かうことを確認する。"""
-    import math
-
     brain = _FixedBrain((0.0, 0.0))  # NN出力は原点（呼ばれないはず）
     enemy = EvolvedEnemy(
         pos=(100.0, 300.0),
@@ -200,7 +198,7 @@ def test_later_generation_uses_nn_even_with_towers() -> None:
 
     enemy.update_with_towers(fortress, [tower], dt=0.5)
 
-    ex, ey = enemy.get_pos()
+    _ex, ey = enemy.get_pos()
     assert ey > 100.0, "NNの出力（+y方向）に移動しているはず"
     assert brain.last_input is not None, "閾値超えではNNが呼ばれるはず"
 
