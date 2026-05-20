@@ -12,6 +12,8 @@ from .constants import (
     COLOR_HP_BAR_BG,
     COLOR_HP_BAR_FG,
     FORTRESS_MAX_HP,
+    FORTRESS_X_RATIO,
+    FORTRESS_Y_RATIO,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
 )
@@ -31,7 +33,7 @@ class Fortress:
         max_hp: int = FORTRESS_MAX_HP,
     ) -> None:
         if pos is None:
-            pos = (SCREEN_WIDTH * 0.85, SCREEN_HEIGHT / 2)
+            pos = (SCREEN_WIDTH * FORTRESS_X_RATIO, SCREEN_HEIGHT * FORTRESS_Y_RATIO)
         self._pos: tuple[float, float] = pos
         self._max_hp: int = max_hp
         self._hp: int = max_hp
