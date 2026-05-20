@@ -271,9 +271,9 @@ class World:
         # 命中したフレームを検知して SE
         for bullet in self._bullets:
             bullet.update(dt)
-            was_consumed_before = bullet.is_consumed()
+            was_consumed_after_update = bullet.is_consumed()
             bullet.check_hit(self._enemies)
-            if not was_consumed_before and bullet.is_consumed():
+            if not was_consumed_after_update and bullet.is_consumed():
                 self._sound.play_se(SE_HIT)
         self._bullets = [b for b in self._bullets if not b.is_consumed()]
 

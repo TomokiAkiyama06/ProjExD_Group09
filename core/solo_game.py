@@ -66,7 +66,6 @@ class SoloGame(Game):
         max_wave: int = 3,
     ) -> None:
         super().__init__()
-        self._sound: SoundSink | None = sound
         self._world: World = World(effects=effects, sound=sound)
         self._builder: Builder = Builder(
             pos=(80.0, SCREEN_HEIGHT - 40.0),
@@ -91,8 +90,7 @@ class SoloGame(Game):
         self._known_enemies: set[int] = set()
         self._generation: int = 0
         # BGM 起動（音源未配置でも no-op で安全）
-        if self._sound is not None:
-            self._sound.play_bgm(BGM_MAIN)
+        self._world.get_sound().play_bgm(BGM_MAIN)
 
     def get_world(self) -> World:
         return self._world
