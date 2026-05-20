@@ -162,4 +162,46 @@ COLOR_SHIELDED: tuple[int, int, int] = (150, 180, 220)
 COLOR_SHIELD: tuple[int, int, int] = (90, 200, 240)
 
 # ===== 対戦・可視化・サウンド（担当⑤） =====
-# 担当⑤が記述
+# 進化グラフ
+GRAPH_DEFAULT_WIDTH: int = 200
+GRAPH_DEFAULT_HEIGHT: int = 100
+GRAPH_MAX_GENERATIONS: int = 60  # 表示する直近世代数
+GRAPH_LINE_BEST: tuple[int, int, int] = (255, 200, 80)
+GRAPH_LINE_AVG: tuple[int, int, int] = (140, 200, 255)
+GRAPH_GRID_COLOR: tuple[int, int, int] = (60, 60, 70)
+GRAPH_BG_COLOR: tuple[int, int, int] = (12, 14, 20)
+
+# 詳細HUD
+HUD_PANEL_BG: tuple[int, int, int] = (24, 28, 36)
+HUD_PANEL_BORDER: tuple[int, int, int] = (90, 90, 100)
+HUD_OPPONENT_BAR_FG: tuple[int, int, int] = (240, 80, 80)
+
+# 対戦
+VERSUS_FIELD_GAP: int = 16  # 2フィールド間の余白
+VERSUS_SEND_COST: int = 25  # 敵送信のリソース消費
+VERSUS_SEND_KEY_PROMPT: str = "B"  # 敵送信メニューを開くキー（表示用）
+VERSUS_MAX_WAVE: int = 99  # 対戦中は時間制限なし扱い
+
+# サウンド
+SOUND_ASSET_DIR: str = "assets/sound"  # SE/BGM の検索先
+SOUND_DEFAULT_BGM_VOLUME: float = 0.5
+SOUND_DEFAULT_SE_VOLUME: float = 0.8
+SOUND_MIXER_FREQUENCY: int = 44100
+SOUND_MIXER_CHANNELS: int = 2
+
+# SE 名（音源ファイルは `assets/sound/<name>.wav` または .ogg）
+SE_TOWER_PLACE: str = "tower_place"
+SE_TOWER_FIRE: str = "tower_fire"
+SE_HIT: str = "hit"
+SE_ENEMY_DIE: str = "enemy_die"
+SE_WEAPON_FIRE: str = "weapon_fire"
+SE_SKILL_DASH: str = "skill_dash"
+SE_SKILL_AREA: str = "skill_area"
+SE_BOSS_SPECIAL: str = "boss_special"
+SE_BOSS_DIE: str = "boss_die"
+SE_WAVE_START: str = "wave_start"
+SE_WAVE_END: str = "wave_end"
+SE_VERSUS_SEND: str = "versus_send_enemy"
+SE_VICTORY: str = "victory"
+SE_DEFEAT: str = "defeat"
+BGM_MAIN: str = "bgm_main"  # `assets/sound/bgm_main.ogg` などを想定
