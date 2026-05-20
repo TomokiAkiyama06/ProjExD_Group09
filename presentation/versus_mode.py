@@ -19,6 +19,7 @@ try:
     from ..core.constants import (
         COLOR_BG,
         COLOR_TEXT,
+        FPS,
         INITIAL_GOLD,
         SCREEN_HEIGHT,
         SCREEN_WIDTH,
@@ -37,6 +38,7 @@ except ImportError:
     from core.constants import (
         COLOR_BG,
         COLOR_TEXT,
+        FPS,
         INITIAL_GOLD,
         SCREEN_HEIGHT,
         SCREEN_WIDTH,
@@ -137,6 +139,7 @@ class VersusGame:
         self._send_cost: int = max(0, int(send_cost))
         self._sound: SoundSink | None = sound
         self._local_side: str = local_side
+        self._enemy_factory: EnemyFactory | None = enemy_factory
         # 拠点座標を左右に対称配置
         left_spawn = [
             (SCREEN_WIDTH * 0.20, SCREEN_HEIGHT * 0.30),
@@ -296,6 +299,67 @@ class VersusGame:
         pg.draw.rect(screen, (0, 0, 0), bg_rect)
         pg.draw.rect(screen, COLOR_TEXT, bg_rect, width=2)
         screen.blit(text, rect)
+
+    # ----- 起動経路（main.py --versus から呼ばれる） -----
+
+    def run(self) -> None:
+        """対戦モードのメインループを起動する。
+
+        pygame ウィンドウを開き、`handle_events → update → draw` を FPS で回す。
+        操作は最小限の暫定実装：
+            - SPACE: 左プレイヤーが右へ敵を 1 体送信
+            - RETURN/ENTER: 右プレイヤーが左へ敵を 1 体送信
+            - ESC: 終了
+            - ウィンドウ × ボタン: 終了
+        """
+        pg.init()
+        screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        clock = pg.time.Clock()
+        self._running = True
+        while self._running:
+            dt = clock.tick(FPS) / 1000.0
+            self.handle_events()
+            if not self._running:
+                break
+            self.update(dt)
+            self.draw(screen)
+            pg.display.flip()
+        pg.quit()
+
+    def stop(self) -> None:
+        """メインループを停止する（テスト・外部終了用）。"""
+        self._running = False
+
+    def is_running(self) -> bool:
+        return getattr(self, "_running", False)
+
+    def handle_events(self) -> None:
+        """Pygame イベントを処理する（QUIT / 敵送信キー）。"""
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                self._running = False
+                continue
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_ESCAPE:
+                    self._running = False
+                elif event.key == pg.K_SPACE:
+                    self._try_send_from("left")
+                elif event.key == pg.K_RETURN:
+                    self._try_send_from("right")
+
+    def _try_send_from(self, sender_side: str) -> bool:
+        """送信側の敵 factory を使って `send_enemy` を呼ぶショートカット。
+
+        factory 未注入の場合は `BaseEnemy` をデフォルトで送る。
+        """
+        if self._enemy_factory is not None:
+            factory: EnemyFactory = self._enemy_factory
+        else:
+
+            def factory(pos: tuple[float, float]) -> BaseEnemy:
+                return BaseEnemy(pos=pos)
+
+        return self.send_enemy(sender_side, factory)
 
 
 # 旧 API 互換: 既存呼び出しでは VersusMode（スコア加算のみ）が参照される。
