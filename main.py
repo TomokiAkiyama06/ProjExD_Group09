@@ -15,18 +15,8 @@ if TYPE_CHECKING:
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
-def run_host() -> None:
-    """ホストモード（プレイヤー1、権威サーバ）。"""
-    print("not implemented: host mode")
-
-
-def run_client(ip: str) -> None:
-    """クライアントモード（プレイヤー2）。"""
-    print(f"not implemented: client mode (host={ip})")
-
-
-def create_solo_game() -> "SoloGame":
-    """1台2プレイヤーモードに必要な concrete 実装を注入して生成する。"""
+def _build_solo_kwargs() -> dict:
+    """SoloGame / HostGame に注入する combat / towers / presentation / evolution の各コンポーネントをまとめる。"""  # noqa: E501
     from combat import (
         SKILL_CYCLE,
         WEAPON_CYCLE,
@@ -35,7 +25,6 @@ def create_solo_game() -> "SoloGame":
         WeaponSelectorUI,
     )
     from core.constants import BOSS_WAVE_MODULO
-    from core.solo_game import SoloGame
     from evolution import EvolutionDriver, EvolutionManager
     from presentation import EvolutionGraph
     from towers import (
@@ -53,24 +42,55 @@ def create_solo_game() -> "SoloGame":
         graph=evolution_graph,
     )
 
-    return SoloGame(
-        tower_factories={
+    return {
+        "tower_factories": {
             "fire": FireTower,
             "ice": IceTower,
             "lightning": LightningTower,
             "physical": PhysicalTower,
         },
-        tower_selector=TowerSelectorUI(),
-        effects=EffectManager(),
-        fighter_weapons=[weapon_cls() for weapon_cls in WEAPON_CYCLE],
-        fighter_skills=[skill_cls() for skill_cls in SKILL_CYCLE],
-        weapon_selector=WeaponSelectorUI(),
-        # enemy_factory は EvolutionDriver.spawn_enemy が自動的に使われる
-        boss_factory=BossEnemy,
-        max_wave=BOSS_WAVE_MODULO,
-        evolution_driver=evolution_driver,
-        evolution_graph=evolution_graph,
-    )
+        "tower_selector": TowerSelectorUI(),
+        "effects": EffectManager(),
+        "fighter_weapons": [weapon_cls() for weapon_cls in WEAPON_CYCLE],
+        "fighter_skills": [skill_cls() for skill_cls in SKILL_CYCLE],
+        "weapon_selector": WeaponSelectorUI(),
+        # enemy_factory は EvolutionDriver.spawn_enemy が SoloGame 側で自動的に使われる
+        "boss_factory": BossEnemy,
+        "max_wave": BOSS_WAVE_MODULO,
+        "evolution_driver": evolution_driver,
+        "evolution_graph": evolution_graph,
+    }
+
+
+def run_host(port: int = 50000) -> None:
+    """ホストモード（プレイヤー1、権威サーバ）。
+
+    `core.host_game.HostGame` を起動し、LAN 内の他 PC からの接続を待ち受ける。
+    """
+    from core.host_game import HostGame
+
+    solo_kwargs = _build_solo_kwargs()
+    # LAN 公開のため 0.0.0.0 にバインドし、すべての NIC から受け付ける
+    game = HostGame(host="0.0.0.0", port=port, **solo_kwargs)
+    game.run()
+
+
+def run_client(ip: str, port: int = 50000) -> None:
+    """クライアントモード（プレイヤー2、描画専用）。
+
+    `core.client_game.ClientGame` を起動してホストに接続する。
+    """
+    from core.client_game import ClientGame
+
+    game = ClientGame(host=ip, port=port, name="player2")
+    game.run()
+
+
+def create_solo_game() -> "SoloGame":
+    """1台2プレイヤーモードに必要な concrete 実装を注入して生成する。"""
+    from core.solo_game import SoloGame
+
+    return SoloGame(**_build_solo_kwargs())
 
 
 def run_solo() -> None:
@@ -86,12 +106,13 @@ def main() -> None:
     group.add_argument("--client", action="store_true", help="クライアントモード（プレイヤー2）")
     group.add_argument("--solo", action="store_true", help="1台2プレイヤーモード")
     parser.add_argument("--ip", default="127.0.0.1", help="--client 時の接続先ホストIP")
+    parser.add_argument("--port", type=int, default=50000, help="UDP ポート番号")
     args = parser.parse_args()
 
     if args.host:
-        run_host()
+        run_host(port=args.port)
     elif args.client:
-        run_client(args.ip)
+        run_client(args.ip, port=args.port)
     else:
         run_solo()
 

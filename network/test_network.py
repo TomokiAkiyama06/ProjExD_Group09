@@ -6,6 +6,7 @@ import time
 from collections.abc import Callable
 from typing import Any
 
+from core.constants import PLAYER_BUILDER_ID, PLAYER_FIGHTER_ID
 from network.net_client import NetClient
 from network.net_protocol import (
     decode_message,
@@ -33,7 +34,7 @@ def test_protocol_round_trip() -> None:
 
 
 def test_serialize_round_trip() -> None:
-    msg = make_input(seq=42, player_id=2, input_payload={"move": [0.5, -1.0]})
+    msg = make_input(seq=42, player_id=PLAYER_FIGHTER_ID, input_payload={"move": [0.5, -1.0]})
     assert deserialize(serialize(msg)) == msg
 
 
@@ -47,11 +48,11 @@ def test_deserialize_safe_on_invalid() -> None:
 
 def test_message_factories_have_required_fields() -> None:
     samples = [
-        make_input(seq=1, player_id=1, input_payload={"move": [0, 0]}),
+        make_input(seq=1, player_id=PLAYER_BUILDER_ID, input_payload={"move": [0, 0]}),
         make_state(seq=2, enemies=[{"id": 1, "pos": [10, 20]}], fortress_hp=99, wave=1),
         make_event(seq=3, event_name="tower_placed", data={"x": 1}, ack_required=True),
         make_connect("alice"),
-        make_connect_ok(player_id=2),
+        make_connect_ok(player_id=PLAYER_FIGHTER_ID),
         make_ping(seq=4),
         make_pong(seq=4),
         make_ack(seq=5),
@@ -122,7 +123,7 @@ def test_loopback_handshake_and_state() -> None:
     try:
         connected = client.connect(timeout=1.5)
         assert connected, "client should connect"
-        assert client.get_player_id() is not None
+        assert client.get_player_id() == PLAYER_FIGHTER_ID
 
         # state を送信し、クライアントが受け取れること
         state_msg = make_state(
@@ -241,10 +242,10 @@ def test_server_rejects_messages_from_unconnected_address() -> None:
 def test_server_discards_stale_input_seq() -> None:
     server = NetServer()
     addr = ("127.0.0.1", 10001)
-    server._clients[addr] = PlayerInfo(player_id=1, name="p1", address=addr)
+    server._clients[addr] = PlayerInfo(player_id=PLAYER_BUILDER_ID, name="p1", address=addr)
 
-    server._handle_packet(serialize(make_input(2, 1, {"move": [2, 0]})), addr)
-    server._handle_packet(serialize(make_input(1, 1, {"move": [1, 0]})), addr)
+    server._handle_packet(serialize(make_input(2, PLAYER_BUILDER_ID, {"move": [2, 0]})), addr)
+    server._handle_packet(serialize(make_input(1, PLAYER_BUILDER_ID, {"move": [1, 0]})), addr)
 
     messages = server.poll_messages()
     assert len(messages) == 1
@@ -254,7 +255,7 @@ def test_server_discards_stale_input_seq() -> None:
 def test_server_registers_pending_before_sending_event() -> None:
     server = NetServer()
     addr = ("127.0.0.1", 10001)
-    server._clients[addr] = PlayerInfo(player_id=1, name="p1", address=addr)
+    server._clients[addr] = PlayerInfo(player_id=PLAYER_BUILDER_ID, name="p1", address=addr)
 
     def _ack_immediately(msg: dict, address: tuple[str, int]) -> bool:
         seq = int(msg["seq"])
@@ -288,7 +289,7 @@ def test_client_registers_pending_before_sending_event() -> None:
 def test_server_deduplicates_retried_client_events_but_acks_each_time() -> None:
     server = NetServer()
     addr = ("127.0.0.1", 10001)
-    server._clients[addr] = PlayerInfo(player_id=1, name="p1", address=addr)
+    server._clients[addr] = PlayerInfo(player_id=PLAYER_BUILDER_ID, name="p1", address=addr)
     acks: list[tuple[tuple[str, int], dict[str, Any]]] = []
 
     def _capture_ack(msg: dict[str, Any], address: tuple[str, int]) -> bool:

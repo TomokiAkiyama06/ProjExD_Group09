@@ -21,26 +21,16 @@ from dataclasses import dataclass, field
 from queue import Empty, Queue
 from typing import Any
 
-try:
-    from ..core.constants import (
-        NET_ACK_MAX_RETRIES,
-        NET_ACK_RESEND_INTERVAL_SEC,
-        NET_RECV_BUFFER_BYTES,
-        NET_RECV_TIMEOUT_SEC,
-        NET_TIMEOUT_SEC,
-        SERVER_HOST,
-        SERVER_PORT,
-    )
-except ImportError:
-    from core.constants import (
-        NET_ACK_MAX_RETRIES,
-        NET_ACK_RESEND_INTERVAL_SEC,
-        NET_RECV_BUFFER_BYTES,
-        NET_RECV_TIMEOUT_SEC,
-        NET_TIMEOUT_SEC,
-        SERVER_HOST,
-        SERVER_PORT,
-    )
+from core.constants import (
+    NET_ACK_MAX_RETRIES,
+    NET_ACK_RESEND_INTERVAL_SEC,
+    NET_FIRST_CLIENT_PLAYER_ID,
+    NET_RECV_BUFFER_BYTES,
+    NET_RECV_TIMEOUT_SEC,
+    NET_TIMEOUT_SEC,
+    SERVER_HOST,
+    SERVER_PORT,
+)
 
 from .net_protocol import (
     MSG_ACK,
@@ -109,7 +99,7 @@ class NetServer:
         self._errors: list[str] = []
 
         self._clients: dict[Address, PlayerInfo] = {}
-        self._next_player_id: int = 1
+        self._next_player_id: int = NET_FIRST_CLIENT_PLAYER_ID
         self._event_seq: int = 0
         self._pending: dict[int, _PendingEvent] = {}
         self._lock: threading.Lock = threading.Lock()

@@ -17,7 +17,13 @@ import pygame as pg
 from .base_player import BasePlayer
 from .base_tower import BaseTower
 from .bullet import Bullet
-from .constants import COLOR_PLAYER, PLAYER_MAX_HP, SE_WEAPON_FIRE, WEAPON_SWITCH_COOLDOWN
+from .constants import (
+    COLOR_PLAYER,
+    PLAYER_FIGHTER_ID,
+    PLAYER_MAX_HP,
+    SE_WEAPON_FIRE,
+    WEAPON_SWITCH_COOLDOWN,
+)
 from .world import World
 
 if TYPE_CHECKING:
@@ -48,7 +54,7 @@ class Fighter(BasePlayer):
         weapons: list[BaseWeapon] | None = None,
         skills: list[BaseSkill] | None = None,
     ) -> None:
-        super().__init__(player_id=2, pos=pos, max_hp=max_hp)
+        super().__init__(player_id=PLAYER_FIGHTER_ID, pos=pos, max_hp=max_hp)
         self._speed = self.BASE_SPEED
         self._is_dashing: bool = False
         self._facing: tuple[float, float] = (1.0, 0.0)
