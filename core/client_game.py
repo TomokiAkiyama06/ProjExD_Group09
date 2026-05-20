@@ -101,10 +101,13 @@ class ClientGame(Game):
     def run(self) -> None:
         """メインループ。接続失敗時は即終了。"""
         if not self.connect():
-            self._draw_connection_failed()
-            pg.display.flip()
-            self._wait_brief()
-            pg.quit()
+            try:
+                self._draw_connection_failed()
+                pg.display.flip()
+                self._wait_brief()
+            finally:
+                self.stop()
+                pg.quit()
             return
         try:
             super().run()

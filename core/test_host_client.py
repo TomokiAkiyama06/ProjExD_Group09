@@ -17,6 +17,21 @@ import pygame as pg
 
 from core.client_game import ClientGame
 from core.host_game import HostGame
+from network.net_protocol import MSG_INPUT
+
+
+class _FailingClient:
+    """ClientGame.run の接続失敗分岐用スタブ。"""
+
+    def __init__(self) -> None:
+        self.stopped: bool = False
+
+    def connect(self, timeout: float = 3.0) -> bool:
+        _ = timeout
+        return False
+
+    def stop(self) -> None:
+        self.stopped = True
 
 
 def _wait_until(
@@ -120,6 +135,47 @@ def test_host_processes_client_input() -> None:
         pg.quit()
 
 
+def test_host_applies_latest_remote_input_once_per_frame() -> None:
+    """複数 input が同一フレームに届いても、移動は frame dt で 1 回だけ進む。"""
+    pg.init()
+    pg.display.set_mode((400, 200))
+    host = HostGame(host="127.0.0.1", port=0)
+    try:
+        fighter = host.get_fighter()
+        start_x, start_y = fighter.get_pos()
+        msg = {"type": MSG_INPUT, "player_id": 2, "input": {"move": [1.0, 0.0]}}
+
+        host._dispatch_remote_message(msg)
+        host._dispatch_remote_message(msg)
+        dt = 1.0 / 60.0
+        host.update(dt)
+
+        end_x, end_y = fighter.get_pos()
+        assert abs(end_x - (start_x + fighter.BASE_SPEED * dt)) < 0.0001
+        assert end_y == start_y
+    finally:
+        pg.quit()
+
+
+def test_host_ignores_malformed_remote_move_payloads() -> None:
+    """不正な move payload は例外にせず、最新入力として採用しない。"""
+    pg.init()
+    pg.display.set_mode((400, 200))
+    host = HostGame(host="127.0.0.1", port=0)
+    try:
+        start = host.get_fighter().get_pos()
+        for move in (None, 1.0, [1.0], ["bad", 0.0], {"x": 1.0, "y": 0.0}):
+            host._dispatch_remote_message(
+                {"type": MSG_INPUT, "player_id": 2, "input": {"move": move}}
+            )
+
+        host.update(1.0 / 60.0)
+
+        assert host.get_fighter().get_pos() == start
+    finally:
+        pg.quit()
+
+
 def test_host_broadcasts_state_at_configured_hz() -> None:
     """HostGame.update を 1 秒分回すと state_seq が state_hz 回程度増える。"""
     pg.init()
@@ -137,9 +193,30 @@ def test_host_broadcasts_state_at_configured_hz() -> None:
         pg.quit()
 
 
+def test_client_run_stops_net_client_on_connect_failure() -> None:
+    """接続失敗で早期 return しても NetClient.stop() を呼ぶ。"""
+    pg.init()
+    pg.display.set_mode((400, 200))
+    client = ClientGame(host="127.0.0.1", port=9, name="tester3")
+    failing_client = _FailingClient()
+    client._client = failing_client
+
+    def no_wait() -> None:
+        pass
+
+    client._wait_brief = no_wait
+    client.run()
+
+    assert failing_client.stopped
+    assert not client.is_running()
+
+
 if __name__ == "__main__":
     test_host_starts_and_binds_port()
     test_client_connects_to_host_and_receives_state()
     test_host_processes_client_input()
+    test_host_applies_latest_remote_input_once_per_frame()
+    test_host_ignores_malformed_remote_move_payloads()
     test_host_broadcasts_state_at_configured_hz()
+    test_client_run_stops_net_client_on_connect_failure()
     print("All host-client integration tests passed.")

@@ -55,6 +55,7 @@ class HostGame(SoloGame):
         self._time_since_state: float = 0.0
         self._state_seq: int = 0
         self._network_started: bool = False
+        self._latest_remote_move: tuple[float, float] = (0.0, 0.0)
 
     # ----- accessors -----
 
@@ -100,6 +101,7 @@ class HostGame(SoloGame):
 
     def update(self, dt: float) -> None:
         """SoloGame の状態更新に加えて、ACK/heartbeat と state broadcast を進める。"""
+        self._apply_latest_remote_input(dt)
         super().update(dt)
         self._server.update()
         self._time_since_state += dt
@@ -119,24 +121,34 @@ class HostGame(SoloGame):
             self._server.get_errors().append(f"received event from client: {msg.get('event')!r}")
 
     def _apply_remote_input(self, msg: dict[str, Any]) -> None:
-        """Input メッセージを player_id ごとにローカルプレイヤーへ反映する。
-
-        player_id == 2（クライアント）からの入力を Fighter の `set_pos` 系で
-        反映する。本実装では最小限：move ベクトルだけを fighter._pos に直接
-        足し込む（base_player.update と同じ式）。
-        """
-        player_id = int(msg.get("player_id", 0))
+        """Input メッセージから最新のクライアント移動入力だけを保持する。"""
+        try:
+            player_id = int(msg.get("player_id", 0))
+        except (TypeError, ValueError):
+            return
         payload = msg.get("input", {})
         if not isinstance(payload, dict):
             return
         if player_id == 2:
-            self._fighter.update(
-                {
-                    "dt": self.get_dt(),
-                    "dx": float(payload.get("move", [0.0, 0.0])[0]),
-                    "dy": float(payload.get("move", [0.0, 0.0])[1]),
-                }
-            )
+            move = self._parse_move_payload(payload)
+            if move is not None:
+                self._latest_remote_move = move
+
+    @staticmethod
+    def _parse_move_payload(payload: dict[str, Any]) -> tuple[float, float] | None:
+        """Input payload から安全に move ベクトルを取り出す。"""
+        move = payload.get("move")
+        if not isinstance(move, (list, tuple)) or len(move) < 2:
+            return None
+        try:
+            return float(move[0]), float(move[1])
+        except (TypeError, ValueError):
+            return None
+
+    def _apply_latest_remote_input(self, dt: float) -> None:
+        """保持中の最新 input を、そのフレームの dt で 1 回だけ反映する。"""
+        dx, dy = self._latest_remote_move
+        self._fighter.update({"dt": dt, "dx": dx, "dy": dy})
 
     def _broadcast_state(self) -> None:
         """現在の World 状態を make_state でシリアライズしてブロードキャストする。"""
