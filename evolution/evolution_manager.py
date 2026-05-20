@@ -12,6 +12,7 @@ from core.constants import (
     FITNESS_DAMAGE_WEIGHT,
     FITNESS_DISTANCE_WEIGHT,
     FITNESS_SURVIVAL_WEIGHT,
+    GA_MUTATION_RATE,
 )
 
 from .neural_net import DEFAULT_HIDDEN_SIZE, DEFAULT_INPUT_SIZE, DEFAULT_OUTPUT_SIZE, NeuralNet
@@ -22,7 +23,7 @@ class EvolutionManager:
     """ニューラルネット個体群を管理する簡易進化マネージャ。"""
 
     population_size: int = 12
-    mutation_rate: float = 0.08
+    mutation_rate: float = GA_MUTATION_RATE
     input_size: int = DEFAULT_INPUT_SIZE
     hidden_size: int = DEFAULT_HIDDEN_SIZE
     output_size: int = DEFAULT_OUTPUT_SIZE
@@ -36,13 +37,26 @@ class EvolutionManager:
                 for _ in range(self.population_size)
             ]
 
-    def mutate(self, net: NeuralNet) -> NeuralNet:
-        """指定したNN個体をコピーし、一定確率で重みを変異させる。"""
-        child = net.copy()
-        for weights in (child.w1, child.b1, child.w2, child.b2):
-            mask = np.random.random(weights.shape) < self.mutation_rate
-            weights[...] += mask * np.random.normal(0.0, 0.1, weights.shape)
-        return child
+    def mutate(self, nn: NeuralNet, rate: float | None = None, scale: float = 0.1) -> None:
+        """重み・バイアスの各要素に確率rateでガウスノイズを加算する。
+
+        Args:
+            nn: 変異させるニューラルネット
+            rate: 各要素を変異させる確率。未指定なら ``self.mutation_rate`` を使う
+            scale: 加算するガウスノイズの標準偏差
+
+        Raises:
+            ValueError: rateが0.0から1.0の範囲外、またはscaleが負の場合
+        """
+        mutation_rate = self.mutation_rate if rate is None else rate
+        self._validate_mutation_params(mutation_rate, scale)
+
+        new_weights: list[np.ndarray] = []
+        for weights in nn.get_weights():
+            noise = np.random.randn(*weights.shape) * scale
+            mask = np.random.rand(*weights.shape) < mutation_rate
+            new_weights.append(weights + noise * mask)
+        nn.set_weights(new_weights)
 
     def calc_fitness(self, enemy_record: dict[str, float | int]) -> float:
         """1個体の記録から適応度を計算する。
@@ -132,9 +146,23 @@ class EvolutionManager:
         parent_count = max(1, len(order) // 3)
         parents = [self.population[index] for index in order[:parent_count]]
         self.population = [
-            self.mutate(parents[i % len(parents)]) for i in range(self.population_size)
+            self._mutated_copy(parents[i % len(parents)]) for i in range(self.population_size)
         ]
         return self.population
+
+    def _mutated_copy(self, net: NeuralNet) -> NeuralNet:
+        """親個体をコピーして突然変異を適用した子個体を返す。"""
+        child = net.copy()
+        self.mutate(child, rate=self.mutation_rate)
+        return child
+
+    @staticmethod
+    def _validate_mutation_params(rate: float, scale: float) -> None:
+        """突然変異率とノイズ量が有効範囲か検証する。"""
+        if not 0.0 <= rate <= 1.0:
+            raise ValueError("rate must be between 0.0 and 1.0")
+        if scale < 0.0:
+            raise ValueError("scale must be greater than or equal to 0.0")
 
     @staticmethod
     def _validate_selection_inputs(
