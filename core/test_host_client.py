@@ -16,6 +16,7 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 import pygame as pg
 
 from core.client_game import ClientGame
+from core.constants import NET_CONNECT_TIMEOUT_SEC, PLAYER_FIGHTER_ID
 from core.host_game import HostGame
 from network.net_protocol import MSG_INPUT
 
@@ -26,7 +27,7 @@ class _FailingClient:
     def __init__(self) -> None:
         self.stopped: bool = False
 
-    def connect(self, timeout: float = 3.0) -> bool:
+    def connect(self, timeout: float = NET_CONNECT_TIMEOUT_SEC) -> bool:
         _ = timeout
         return False
 
@@ -85,7 +86,7 @@ def test_client_connects_to_host_and_receives_state() -> None:
         # 接続
         connected = client.connect(timeout=2.0)
         assert connected, "client should connect to host"
-        assert client.get_client().get_player_id() is not None
+        assert client.get_client().get_player_id() == PLAYER_FIGHTER_ID
 
         # ホスト側ループを数フレーム回して state broadcast を発生させる
         for _ in range(20):
@@ -143,7 +144,11 @@ def test_host_applies_latest_remote_input_once_per_frame() -> None:
     try:
         fighter = host.get_fighter()
         start_x, start_y = fighter.get_pos()
-        msg = {"type": MSG_INPUT, "player_id": 2, "input": {"move": [1.0, 0.0]}}
+        msg = {
+            "type": MSG_INPUT,
+            "player_id": PLAYER_FIGHTER_ID,
+            "input": {"move": [1.0, 0.0]},
+        }
 
         host._dispatch_remote_message(msg)
         host._dispatch_remote_message(msg)
@@ -166,7 +171,7 @@ def test_host_ignores_malformed_remote_move_payloads() -> None:
         start = host.get_fighter().get_pos()
         for move in (None, 1.0, [1.0], ["bad", 0.0], {"x": 1.0, "y": 0.0}):
             host._dispatch_remote_message(
-                {"type": MSG_INPUT, "player_id": 2, "input": {"move": move}}
+                {"type": MSG_INPUT, "player_id": PLAYER_FIGHTER_ID, "input": {"move": move}}
             )
 
         host.update(1.0 / 60.0)

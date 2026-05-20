@@ -13,15 +13,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-try:
-    from network.net_protocol import MSG_EVENT, MSG_INPUT, make_state
-    from network.net_server import NetServer
-except ImportError:  # pragma: no cover - 開発時のフォールバック
-    from ..network.net_protocol import MSG_EVENT, MSG_INPUT, make_state
-    from ..network.net_server import NetServer
+from network.net_protocol import MSG_EVENT, MSG_INPUT, make_state
+from network.net_server import NetServer
 
 from .constants import (
     NET_STATE_HZ,
+    PLAYER_FIGHTER_ID,
     SERVER_HOST,
     SERVER_PORT,
 )
@@ -121,7 +118,11 @@ class HostGame(SoloGame):
             self._server.get_errors().append(f"received event from client: {msg.get('event')!r}")
 
     def _apply_remote_input(self, msg: dict[str, Any]) -> None:
-        """Input メッセージから最新のクライアント移動入力だけを保持する。"""
+        """Player2（前線役）からの最新移動入力だけを保持する。
+
+        LAN 協力モードではホストが Builder(Player1) を担当し、最初のクライアントは
+        NetServer 側で Fighter(Player2) として割り当てる。
+        """
         try:
             player_id = int(msg.get("player_id", 0))
         except (TypeError, ValueError):
@@ -129,7 +130,7 @@ class HostGame(SoloGame):
         payload = msg.get("input", {})
         if not isinstance(payload, dict):
             return
-        if player_id == 2:
+        if player_id == PLAYER_FIGHTER_ID:
             move = self._parse_move_payload(payload)
             if move is not None:
                 self._latest_remote_move = move

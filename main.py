@@ -25,7 +25,6 @@ def _build_solo_kwargs() -> dict:
         WeaponSelectorUI,
     )
     from core.constants import BOSS_WAVE_MODULO
-    from core.solo_game import SoloGame
     from evolution import EvolvedEnemy
     from towers import (
         FireTower,
@@ -47,7 +46,7 @@ def _build_solo_kwargs() -> dict:
         "fighter_weapons": [weapon_cls() for weapon_cls in WEAPON_CYCLE],
         "fighter_skills": [skill_cls() for skill_cls in SKILL_CYCLE],
         "weapon_selector": WeaponSelectorUI(),
-        "enemy_factory": create_combat_enemy,
+        "enemy_factory": EvolvedEnemy,
         "boss_factory": BossEnemy,
         "max_wave": BOSS_WAVE_MODULO,
     }
@@ -82,15 +81,6 @@ def create_solo_game() -> "SoloGame":
     from core.solo_game import SoloGame
 
     return SoloGame(**_build_solo_kwargs())
-        tower_selector=TowerSelectorUI(),
-        effects=EffectManager(),
-        fighter_weapons=[weapon_cls() for weapon_cls in WEAPON_CYCLE],
-        fighter_skills=[skill_cls() for skill_cls in SKILL_CYCLE],
-        weapon_selector=WeaponSelectorUI(),
-        enemy_factory=EvolvedEnemy,
-        boss_factory=BossEnemy,
-        max_wave=BOSS_WAVE_MODULO,
-    )
 
 
 def run_solo() -> None:

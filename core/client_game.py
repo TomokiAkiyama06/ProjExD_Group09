@@ -14,14 +14,27 @@ from typing import Any
 
 import pygame as pg
 
-try:
-    from network.net_client import NetClient
-    from network.state_buffer import StateBuffer
-except ImportError:  # pragma: no cover - 開発時のフォールバック
-    from ..network.net_client import NetClient
-    from ..network.state_buffer import StateBuffer
+from network.net_client import NetClient
+from network.state_buffer import StateBuffer
 
 from .constants import (
+    CLIENT_CONNECTION_FAIL_WAIT_SEC,
+    CLIENT_CONNECTION_FAILED_HINT_Y_OFFSET,
+    CLIENT_CONNECTION_FAILED_TITLE_Y_OFFSET,
+    CLIENT_DEFAULT_BULLET_RADIUS,
+    CLIENT_DEFAULT_ENEMY_RADIUS,
+    CLIENT_DEFAULT_FORTRESS_RADIUS,
+    CLIENT_DEFAULT_PLAYER_RADIUS,
+    CLIENT_DEFAULT_TOWER_RADIUS,
+    CLIENT_FONT_SIZE,
+    CLIENT_HP_BAR_HEIGHT,
+    CLIENT_HP_BAR_WIDTH,
+    CLIENT_OVERLAY_TEXT_X_GAP,
+    CLIENT_OVERLAY_TEXT_Y_OFFSET,
+    CLIENT_OVERLAY_X,
+    CLIENT_OVERLAY_Y,
+    CLIENT_WAIT_FPS,
+    CLIENT_WAITING_TEXT_Y_OFFSET,
     COLOR_BG,
     COLOR_BULLET,
     COLOR_ENEMY,
@@ -31,6 +44,10 @@ from .constants import (
     COLOR_PLAYER,
     COLOR_TEXT,
     COLOR_TOWER,
+    FORTRESS_MAX_HP,
+    FORTRESS_X_RATIO,
+    FORTRESS_Y_RATIO,
+    NET_CONNECT_TIMEOUT_SEC,
     NET_INPUT_HZ,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
@@ -42,13 +59,6 @@ from .game import Game
 
 class ClientGame(Game):
     """描画専用クライアント。"""
-
-    DEFAULT_ENEMY_RADIUS: int = 10
-    DEFAULT_TOWER_RADIUS: int = 16
-    DEFAULT_PLAYER_RADIUS: int = 14
-    DEFAULT_FORTRESS_RADIUS: int = 36
-    HP_BAR_WIDTH: int = 220
-    HP_BAR_HEIGHT: int = 12
 
     def __init__(
         self,
@@ -74,7 +84,7 @@ class ClientGame(Game):
         self._latest_seq: int = -1
         if not pg.font.get_init():
             pg.font.init()
-        self._font: pg.font.Font = pg.font.SysFont(None, 18)
+        self._font: pg.font.Font = pg.font.SysFont(None, CLIENT_FONT_SIZE)
 
     # ----- accessors -----
 
@@ -89,7 +99,7 @@ class ClientGame(Game):
 
     # ----- lifecycle -----
 
-    def connect(self, timeout: float = 3.0) -> bool:
+    def connect(self, timeout: float = NET_CONNECT_TIMEOUT_SEC) -> bool:
         """ホストへ接続要求を送り、connect_ok を待つ。"""
         return self._client.connect(timeout=timeout)
 
@@ -144,7 +154,8 @@ class ClientGame(Game):
         state = self._state_buffer.get_interpolated(time.monotonic())
         self._screen.fill(COLOR_BG)
         if state is None:
-            self._blit_centered("Waiting for host...", y_offset=-20)
+            # Game.run() が draw() 後に flip するため、早期 return でも表示される。
+            self._blit_centered("Waiting for host...", y_offset=CLIENT_WAITING_TEXT_Y_OFFSET)
             return
         self._draw_fortress(state)
         self._draw_towers(state)
@@ -172,17 +183,18 @@ class ClientGame(Game):
     # ----- draw helpers -----
 
     def _draw_fortress(self, state: dict[str, Any]) -> None:
-        # ホスト側の World.fortress と同じ位置（右側中央）にプレースホルダーで描画
+        """ホスト側の拠点と同じ右側中央位置へプレースホルダーを描く。"""
         _ = state  # state は将来 fortress 座標を含めた時の予約
-        fortress_pos = (SCREEN_WIDTH * 0.85, SCREEN_HEIGHT / 2)
+        fortress_pos = (SCREEN_WIDTH * FORTRESS_X_RATIO, SCREEN_HEIGHT * FORTRESS_Y_RATIO)
         pg.draw.circle(
             self._screen,
             COLOR_FORTRESS,
             (int(fortress_pos[0]), int(fortress_pos[1])),
-            self.DEFAULT_FORTRESS_RADIUS,
+            CLIENT_DEFAULT_FORTRESS_RADIUS,
         )
 
     def _draw_towers(self, state: dict[str, Any]) -> None:
+        """State 内のタワー一覧を小さな円で描く。"""
         for tower in state.get("towers", []):
             if not isinstance(tower, dict):
                 continue
@@ -191,10 +203,11 @@ class ClientGame(Game):
                 self._screen,
                 COLOR_TOWER,
                 (int(pos[0]), int(pos[1])),
-                self.DEFAULT_TOWER_RADIUS,
+                CLIENT_DEFAULT_TOWER_RADIUS,
             )
 
     def _draw_enemies(self, state: dict[str, Any]) -> None:
+        """State 内の敵一覧を補間済み座標へ描く。"""
         for enemy in state.get("enemies", []):
             if not isinstance(enemy, dict):
                 continue
@@ -203,10 +216,11 @@ class ClientGame(Game):
                 self._screen,
                 COLOR_ENEMY,
                 (int(pos[0]), int(pos[1])),
-                self.DEFAULT_ENEMY_RADIUS,
+                CLIENT_DEFAULT_ENEMY_RADIUS,
             )
 
     def _draw_players(self, state: dict[str, Any]) -> None:
+        """State 内のプレイヤー一覧を描く。"""
         for player in state.get("players", []):
             if not isinstance(player, dict):
                 continue
@@ -215,10 +229,11 @@ class ClientGame(Game):
                 self._screen,
                 COLOR_PLAYER,
                 (int(pos[0]), int(pos[1])),
-                self.DEFAULT_PLAYER_RADIUS,
+                CLIENT_DEFAULT_PLAYER_RADIUS,
             )
 
     def _draw_bullets(self, state: dict[str, Any]) -> None:
+        """State 内の弾一覧を描く。"""
         for bullet in state.get("bullets", []):
             if not isinstance(bullet, dict):
                 continue
@@ -227,52 +242,65 @@ class ClientGame(Game):
                 self._screen,
                 COLOR_BULLET,
                 (int(pos[0]), int(pos[1])),
-                4,
+                CLIENT_DEFAULT_BULLET_RADIUS,
             )
 
     def _draw_overlay(self, state: dict[str, Any]) -> None:
-        # 拠点 HP バー（左上）
-        max_hp = max(1, int(state.get("core_max_hp", 1000)))
+        """拠点 HP バーと簡易ステータステキストを画面左上に描く。"""
+        max_hp = max(1, int(state.get("core_max_hp", FORTRESS_MAX_HP)))
         hp = max(0, int(state.get("fortress_hp", 0)))
-        bar_x, bar_y = 10, 10
+        bar_x, bar_y = CLIENT_OVERLAY_X, CLIENT_OVERLAY_Y
         pg.draw.rect(
             self._screen,
             COLOR_HP_BAR_BG,
-            (bar_x, bar_y, self.HP_BAR_WIDTH, self.HP_BAR_HEIGHT),
+            (bar_x, bar_y, CLIENT_HP_BAR_WIDTH, CLIENT_HP_BAR_HEIGHT),
         )
         ratio = hp / max_hp
-        fg_width = int(self.HP_BAR_WIDTH * ratio)
+        fg_width = int(CLIENT_HP_BAR_WIDTH * ratio)
         if fg_width > 0:
             pg.draw.rect(
                 self._screen,
                 COLOR_HP_BAR_FG,
-                (bar_x, bar_y, fg_width, self.HP_BAR_HEIGHT),
+                (bar_x, bar_y, fg_width, CLIENT_HP_BAR_HEIGHT),
             )
         wave = int(state.get("wave", 0))
         pid = self._client.get_player_id()
         self._blit_text(
             f"Core HP {hp}  Wave {wave}  Player {pid}",
-            (bar_x + self.HP_BAR_WIDTH + 12, bar_y - 1),
+            (
+                bar_x + CLIENT_HP_BAR_WIDTH + CLIENT_OVERLAY_TEXT_X_GAP,
+                bar_y + CLIENT_OVERLAY_TEXT_Y_OFFSET,
+            ),
         )
 
     def _draw_connection_failed(self) -> None:
+        """接続失敗時の短い案内を描く。"""
         self._screen.fill(COLOR_BG)
-        self._blit_centered("Failed to connect to host.", y_offset=-10)
-        self._blit_centered("Press window close to exit.", y_offset=14)
+        self._blit_centered(
+            "Failed to connect to host.",
+            y_offset=CLIENT_CONNECTION_FAILED_TITLE_Y_OFFSET,
+        )
+        self._blit_centered(
+            "Press window close to exit.",
+            y_offset=CLIENT_CONNECTION_FAILED_HINT_Y_OFFSET,
+        )
 
     def _blit_text(self, text: str, pos: tuple[int, int]) -> None:
+        """指定位置へ通常テキストを描く。"""
         surface = self._font.render(text, True, COLOR_TEXT)
         self._screen.blit(surface, pos)
 
     def _blit_centered(self, text: str, y_offset: int = 0) -> None:
+        """画面中央から y 方向にずらしてテキストを描く。"""
         surface = self._font.render(text, True, COLOR_TEXT)
         rect = surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + y_offset))
         self._screen.blit(surface, rect)
 
     def _wait_brief(self) -> None:
-        end = time.monotonic() + 1.5
+        """接続失敗メッセージを短時間だけ表示する。"""
+        end = time.monotonic() + CLIENT_CONNECTION_FAIL_WAIT_SEC
         while time.monotonic() < end:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     return
-            self._clock.tick(30)
+            self._clock.tick(CLIENT_WAIT_FPS)
