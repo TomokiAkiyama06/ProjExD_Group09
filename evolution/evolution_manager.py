@@ -28,6 +28,7 @@ class EvolutionManager:
     hidden_size: int = DEFAULT_HIDDEN_SIZE
     output_size: int = DEFAULT_OUTPUT_SIZE
     population: list[NeuralNet] = field(default_factory=list)
+    _generation: int = 1
 
     def __post_init__(self) -> None:
         """初期個体群が未指定ならランダムなNN個体群を生成する。"""
@@ -36,6 +37,10 @@ class EvolutionManager:
                 NeuralNet(self.input_size, self.hidden_size, self.output_size)
                 for _ in range(self.population_size)
             ]
+
+    def get_generation(self) -> int:
+        """現在の世代番号を返す（初期世代は 1）。"""
+        return self._generation
 
     def mutate(self, nn: NeuralNet, rate: float | None = None, scale: float = 0.1) -> None:
         """重み・バイアスの各要素に確率rateでガウスノイズを加算する。
@@ -160,7 +165,7 @@ class EvolutionManager:
         return population[int(best_index)]
 
     def next_generation(self, fitness: list[float]) -> list[NeuralNet]:
-        """適応度の高い個体を親として次世代を生成する。"""
+        """適応度の高い個体を親として次世代を生成し、世代番号をインクリメントする。"""
         if len(fitness) != len(self.population):
             raise ValueError("fitness length must match population length")
 
@@ -170,6 +175,7 @@ class EvolutionManager:
         self.population = [
             self._mutated_copy(parents[i % len(parents)]) for i in range(self.population_size)
         ]
+        self._generation += 1
         return self.population
 
     def _mutated_copy(self, net: NeuralNet) -> NeuralNet:

@@ -14,7 +14,7 @@ import pygame as pg
 
 from .base_player import BasePlayer
 from .base_tower import BaseTower
-from .constants import COLOR_PLAYER, INITIAL_GOLD, SE_TOWER_PLACE
+from .constants import COLOR_PLAYER, INITIAL_GOLD, PLAYER_BUILDER_ID, SE_TOWER_PLACE
 from .world import World
 
 TowerFactory = Callable[..., BaseTower]
@@ -40,7 +40,7 @@ class Builder(BasePlayer):
         tower_cost: int = DEFAULT_TOWER_COST,
         tower_factories: dict[str, TowerFactory] | None = None,
     ) -> None:
-        super().__init__(player_id=1, pos=pos)
+        super().__init__(player_id=PLAYER_BUILDER_ID, pos=pos)
         self._gold: int = max(0, gold)
         self._tower_cost: int = max(0, tower_cost)
         self._selected_tower_type: str = self.TOWER_TYPES[0]

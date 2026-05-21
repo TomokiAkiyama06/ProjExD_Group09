@@ -4,16 +4,46 @@ from __future__ import annotations
 
 import numpy as np
 
+from core.base_tower import BaseTower
 from core.constants import (
+    EARLY_GENERATION_THRESHOLD,
     EVOLUTION_ELITE_RATE,
     EVOLUTION_TOURNAMENT_SIZE,
     FITNESS_DAMAGE_WEIGHT,
     FITNESS_DISTANCE_WEIGHT,
     FITNESS_SURVIVAL_WEIGHT,
     EVOLUTION_MUTATION_RATE,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
 )
+from core.fortress import Fortress
+from core.world import World
+from evolution.evolution_driver import EvolutionDriver
 from evolution.evolution_manager import EvolutionManager
+from evolution.evolved_enemy import EvolvedEnemy
 from evolution.neural_net import DEFAULT_INPUT_SIZE, DEFAULT_OUTPUT_SIZE, NeuralNet
+
+
+class _CapturingEvolutionManager(EvolutionManager):
+    """next_generation に渡された fitness を検証用に保持する manager。"""
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.captured_fitness: list[float] | None = None
+
+    def next_generation(self, fitness: list[float]) -> list[NeuralNet]:
+        self.captured_fitness = list(fitness)
+        return super().next_generation(fitness)
+
+
+class _FixedBrain:
+    def __init__(self, output: tuple[float, float]) -> None:
+        self._output: np.ndarray = np.asarray(output, dtype=float)
+        self.last_input: np.ndarray | None = None
+
+    def forward(self, input_vec: np.ndarray) -> np.ndarray:
+        self.last_input = np.asarray(input_vec, dtype=float)
+        return self._output
 
 
 def test_neural_net_forward_shape() -> None:
@@ -80,6 +110,110 @@ def test_neural_net_clone_keeps_independent_weights() -> None:
     assert np.array_equal(cloned_net.b1, original_weights[1])
     assert np.array_equal(cloned_net.w2, original_weights[2])
     assert np.array_equal(cloned_net.b2, original_weights[3])
+
+
+def test_evolved_enemy_builds_twelve_dimensional_input() -> None:
+    enemy = EvolvedEnemy(pos=(100.0, 100.0), hp=20)
+    enemy.take_damage(5)
+    fortress = Fortress(pos=(580.0, 370.0))
+    tower = BaseTower(pos=(196.0, 154.0))
+
+    input_vec = enemy._build_input_vector(fortress, [tower])
+
+    assert input_vec.shape == (DEFAULT_INPUT_SIZE,)
+    assert input_vec[0] == 0.75
+    assert input_vec[1] == (fortress.get_pos()[0] - enemy.get_pos()[0]) / SCREEN_WIDTH
+    assert input_vec[2] == (fortress.get_pos()[1] - enemy.get_pos()[1]) / SCREEN_HEIGHT
+    assert input_vec[3] == (tower.get_pos()[0] - enemy.get_pos()[0]) / SCREEN_WIDTH
+    assert input_vec[4] == (tower.get_pos()[1] - enemy.get_pos()[1]) / SCREEN_HEIGHT
+
+
+def test_evolved_enemy_moves_with_brain_output() -> None:
+    brain = _FixedBrain((1.0, 0.0))
+    enemy = EvolvedEnemy(pos=(100.0, 100.0), brain=brain, speed=60.0)
+    fortress = Fortress(pos=(900.0, 100.0))
+
+    enemy.update_with_towers(fortress, [], dt=0.5)
+
+    assert enemy.get_pos() == (130.0, 100.0)
+    assert brain.last_input is not None
+
+
+def test_world_passes_towers_to_evolved_enemy() -> None:
+    brain = _FixedBrain((0.0, 1.0))
+    # EARLY_GENERATION_THRESHOLD を超えた世代を指定してNNパスを通す
+    enemy = EvolvedEnemy(
+        pos=(100.0, 100.0),
+        brain=brain,
+        speed=0.0,
+        generation=EARLY_GENERATION_THRESHOLD + 1,
+    )
+    tower = BaseTower(pos=(220.0, 160.0))
+    world = World(spawn_points=[], fortress=Fortress(pos=(900.0, 100.0)))
+    world.add_enemy(enemy)
+    world.add_tower(tower)
+
+    world.update(0.1)
+
+    assert brain.last_input is not None
+    assert brain.last_input[3] == (tower.get_pos()[0] - enemy.get_pos()[0]) / SCREEN_WIDTH
+    assert brain.last_input[4] == (tower.get_pos()[1] - enemy.get_pos()[1]) / SCREEN_HEIGHT
+
+
+def test_early_generation_moves_toward_nearest_tower() -> None:
+    """初期世代（閾値以下）はNNを使わず最近傍タワーへ向かうことを確認する。"""
+    brain = _FixedBrain((0.0, 0.0))  # NN出力は原点（呼ばれないはず）
+    enemy = EvolvedEnemy(
+        pos=(100.0, 300.0),
+        brain=brain,
+        speed=60.0,
+        generation=EARLY_GENERATION_THRESHOLD,
+    )
+    tower = BaseTower(pos=(200.0, 300.0))  # 真横にタワー
+    fortress = Fortress(pos=(900.0, 300.0))
+
+    enemy.update_with_towers(fortress, [tower], dt=1.0)
+
+    ex, ey = enemy.get_pos()
+    assert ex > 100.0, "タワー方向（+x）に移動しているはず"
+    assert abs(ey - 300.0) < 1e-9, "y座標は変わらないはず"
+    assert brain.last_input is None, "早期世代ではNNは呼ばれないはず"
+
+
+def test_early_generation_falls_back_to_nn_when_no_towers() -> None:
+    """初期世代でもタワーがなければNNで移動することを確認する。"""
+    brain = _FixedBrain((1.0, 0.0))
+    enemy = EvolvedEnemy(
+        pos=(100.0, 100.0),
+        brain=brain,
+        speed=60.0,
+        generation=0,
+    )
+    fortress = Fortress(pos=(900.0, 100.0))
+
+    enemy.update_with_towers(fortress, [], dt=0.5)
+
+    assert enemy.get_pos() == (130.0, 100.0)
+    assert brain.last_input is not None, "タワーなし時はNNにフォールバックするはず"
+
+
+def test_later_generation_uses_nn_even_with_towers() -> None:
+    """閾値を超えた世代はタワーがあってもNNを使うことを確認する。"""
+    brain = _FixedBrain((0.0, 1.0))  # 真下に移動するNN出力
+    enemy = EvolvedEnemy(
+        pos=(100.0, 100.0),
+        brain=brain,
+        speed=60.0,
+        generation=EARLY_GENERATION_THRESHOLD + 1,
+    )
+    tower = BaseTower(pos=(200.0, 100.0))  # 真横にタワー
+    fortress = Fortress(pos=(900.0, 100.0))
+
+    enemy.update_with_towers(fortress, [tower], dt=0.5)
+
+    _ex, ey = enemy.get_pos()
+    assert ey > 100.0, "NNの出力（+y方向）に移動しているはず"
+    assert brain.last_input is not None, "閾値超えではNNが呼ばれるはず"
 
 
 def test_evolution_manager_uses_default_neural_net_shape() -> None:
@@ -222,3 +356,46 @@ def test_tournament_select_returns_best_candidate() -> None:
     )
 
     assert selected is population[1]
+
+
+def test_evolution_driver_waits_until_population_is_evaluated() -> None:
+    manager = EvolutionManager(population_size=3)
+    now = 0.0
+    driver = EvolutionDriver(manager=manager, time_source=lambda: now)
+
+    driver.spawn_enemy((100.0, 100.0))
+    driver.spawn_enemy((100.0, 100.0))
+
+    assert not driver.finalize_wave()
+    assert manager.get_generation() == 1
+    assert driver.get_evaluated_population_count() == 2
+    assert driver.get_spawned_count() == 0
+
+    driver.spawn_enemy((100.0, 100.0))
+
+    assert driver.finalize_wave()
+    assert manager.get_generation() == 2
+    assert driver.get_evaluated_population_count() == 0
+    assert driver.get_spawned_count() == 0
+
+
+def test_evolution_driver_uses_locked_survival_time_for_dead_enemy() -> None:
+    now = 0.0
+
+    def current_time() -> float:
+        return now
+
+    manager = _CapturingEvolutionManager(population_size=2)
+    driver = EvolutionDriver(manager=manager, time_source=current_time)
+    early = driver.spawn_enemy((100.0, 100.0))
+    driver.spawn_enemy((100.0, 100.0))
+
+    now = 0.5
+    early.take_damage(early.get_hp())
+    driver.observe_frame()
+
+    now = 5.0
+    assert driver.finalize_wave()
+
+    assert manager.captured_fitness is not None
+    assert manager.captured_fitness[0] < manager.captured_fitness[1]

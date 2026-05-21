@@ -16,28 +16,17 @@ from dataclasses import dataclass
 from queue import Empty, Queue
 from typing import Any
 
-try:
-    from ..core.constants import (
-        NET_ACK_MAX_RETRIES,
-        NET_ACK_RESEND_INTERVAL_SEC,
-        NET_PING_INTERVAL_SEC,
-        NET_RECV_BUFFER_BYTES,
-        NET_RECV_TIMEOUT_SEC,
-        NET_TIMEOUT_SEC,
-        SERVER_HOST,
-        SERVER_PORT,
-    )
-except ImportError:
-    from core.constants import (
-        NET_ACK_MAX_RETRIES,
-        NET_ACK_RESEND_INTERVAL_SEC,
-        NET_PING_INTERVAL_SEC,
-        NET_RECV_BUFFER_BYTES,
-        NET_RECV_TIMEOUT_SEC,
-        NET_TIMEOUT_SEC,
-        SERVER_HOST,
-        SERVER_PORT,
-    )
+from core.constants import (
+    NET_ACK_MAX_RETRIES,
+    NET_ACK_RESEND_INTERVAL_SEC,
+    NET_CONNECT_TIMEOUT_SEC,
+    NET_PING_INTERVAL_SEC,
+    NET_RECV_BUFFER_BYTES,
+    NET_RECV_TIMEOUT_SEC,
+    NET_TIMEOUT_SEC,
+    SERVER_HOST,
+    SERVER_PORT,
+)
 
 from .net_protocol import (
     MSG_ACK,
@@ -138,7 +127,7 @@ class NetClient:
 
     # ----- public protocol -----
 
-    def connect(self, timeout: float = 3.0) -> bool:
+    def connect(self, timeout: float = NET_CONNECT_TIMEOUT_SEC) -> bool:
         """ホストに connect を送り connect_ok を待つ。
 
         Returns:
