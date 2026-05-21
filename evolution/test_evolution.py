@@ -368,12 +368,14 @@ def test_evolution_driver_waits_until_population_is_evaluated() -> None:
     assert not driver.finalize_wave()
     assert manager.get_generation() == 1
     assert driver.get_evaluated_population_count() == 2
+    assert driver.get_spawned_count() == 0
 
     driver.spawn_enemy((100.0, 100.0))
 
     assert driver.finalize_wave()
     assert manager.get_generation() == 2
     assert driver.get_evaluated_population_count() == 0
+    assert driver.get_spawned_count() == 0
 
 
 def test_evolution_driver_uses_locked_survival_time_for_dead_enemy() -> None:
