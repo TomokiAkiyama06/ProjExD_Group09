@@ -12,7 +12,7 @@ from core.constants import (
     FITNESS_DAMAGE_WEIGHT,
     FITNESS_DISTANCE_WEIGHT,
     FITNESS_SURVIVAL_WEIGHT,
-    GA_MUTATION_RATE,
+    EVOLUTION_MUTATION_RATE,
 )
 
 from .neural_net import DEFAULT_HIDDEN_SIZE, DEFAULT_INPUT_SIZE, DEFAULT_OUTPUT_SIZE, NeuralNet
@@ -23,7 +23,7 @@ class EvolutionManager:
     """ニューラルネット個体群を管理する簡易進化マネージャ。"""
 
     population_size: int = 12
-    mutation_rate: float = GA_MUTATION_RATE
+    mutation_rate: float = EVOLUTION_MUTATION_RATE
     input_size: int = DEFAULT_INPUT_SIZE
     hidden_size: int = DEFAULT_HIDDEN_SIZE
     output_size: int = DEFAULT_OUTPUT_SIZE

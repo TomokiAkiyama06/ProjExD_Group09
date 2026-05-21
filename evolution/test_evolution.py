@@ -10,7 +10,7 @@ from core.constants import (
     FITNESS_DAMAGE_WEIGHT,
     FITNESS_DISTANCE_WEIGHT,
     FITNESS_SURVIVAL_WEIGHT,
-    GA_MUTATION_RATE,
+    EVOLUTION_MUTATION_RATE,
 )
 from evolution.evolution_manager import EvolutionManager
 from evolution.neural_net import DEFAULT_INPUT_SIZE, DEFAULT_OUTPUT_SIZE, NeuralNet
@@ -90,7 +90,8 @@ def test_evolution_manager_uses_default_neural_net_shape() -> None:
 
 def test_evolution_manager_uses_default_mutation_rate() -> None:
     manager = EvolutionManager(population_size=1)
-    assert manager.mutation_rate == GA_MUTATION_RATE
+    assert EVOLUTION_MUTATION_RATE == 0.05
+    assert manager.mutation_rate == EVOLUTION_MUTATION_RATE
 
 
 def test_next_generation_keeps_population_size() -> None:
