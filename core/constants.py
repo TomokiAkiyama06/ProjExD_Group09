@@ -191,6 +191,7 @@ COLOR_SHIELD: tuple[int, int, int] = (90, 200, 240)
 
 # ===== 対戦・可視化・サウンド（担当⑤） =====
 # 進化グラフ
+EVOLUTION_GRAPH_DEFAULT_ORIGIN: tuple[int, int] = (10, 80)
 GRAPH_DEFAULT_WIDTH: int = 200
 GRAPH_DEFAULT_HEIGHT: int = 100
 GRAPH_MAX_GENERATIONS: int = 60  # 表示する直近世代数

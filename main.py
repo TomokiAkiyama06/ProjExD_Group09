@@ -16,7 +16,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
 def _build_solo_kwargs() -> dict:
-    """SoloGame / HostGame に注入する combat / towers / presentation コンポーネントをまとめる。"""
+    """SoloGame / HostGame に注入する combat / towers / presentation / evolution の各コンポーネントをまとめる。"""  # noqa: E501
     from combat import (
         SKILL_CYCLE,
         WEAPON_CYCLE,
@@ -25,13 +25,21 @@ def _build_solo_kwargs() -> dict:
         WeaponSelectorUI,
     )
     from core.constants import BOSS_WAVE_MODULO
-    from evolution import EvolvedEnemy
+    from evolution import EvolutionDriver, EvolutionManager
+    from presentation import EvolutionGraph
     from towers import (
         FireTower,
         IceTower,
         LightningTower,
         PhysicalTower,
         TowerSelectorUI,
+    )
+
+    evolution_manager = EvolutionManager()
+    evolution_graph = EvolutionGraph()
+    evolution_driver = EvolutionDriver(
+        manager=evolution_manager,
+        graph=evolution_graph,
     )
 
     return {
@@ -46,9 +54,11 @@ def _build_solo_kwargs() -> dict:
         "fighter_weapons": [weapon_cls() for weapon_cls in WEAPON_CYCLE],
         "fighter_skills": [skill_cls() for skill_cls in SKILL_CYCLE],
         "weapon_selector": WeaponSelectorUI(),
-        "enemy_factory": EvolvedEnemy,
+        # enemy_factory は EvolutionDriver.spawn_enemy が SoloGame 側で自動的に使われる
         "boss_factory": BossEnemy,
         "max_wave": BOSS_WAVE_MODULO,
+        "evolution_driver": evolution_driver,
+        "evolution_graph": evolution_graph,
     }
 
 

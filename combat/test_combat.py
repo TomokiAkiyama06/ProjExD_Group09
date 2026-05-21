@@ -332,7 +332,9 @@ def test_create_solo_game_supplies_combat_defaults() -> None:
     assert fighter.get_current_weapon() is not None
     assert fighter.get_current_skill() is not None
     assert game._wave_manager.get_max_wave() >= BOSS_WAVE_MODULO
-    assert game._wave_manager._factory is EvolvedEnemy
+    # enemy_factory は EvolutionDriver.spawn_enemy 経由になり、生成される個体が EvolvedEnemy
+    spawned = game._wave_manager._factory((100.0, 100.0))
+    assert isinstance(spawned, EvolvedEnemy)
 
     pg.quit()
 
