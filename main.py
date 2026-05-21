@@ -79,22 +79,18 @@ def run_client(ip: str, port: int = 50000) -> None:
 def run_versus() -> None:
     """対戦モード（同一プロセス内で 2 フィールドを並列駆動）。
 
-    `presentation.VersusGame` を起動する。`_build_solo_kwargs` で生成した
-    enemy_factory / boss_factory を流用し、両フィールドで同じ敵が出現する。
+    `presentation.VersusGame` を起動する。敵 factory には solo / host と同じ
+    `EvolvedEnemy` / `BossEnemy` を渡し、両フィールドで進化対応敵とボスを使う。
     """
-    from combat import BossEnemy, EffectManager
+    from combat import BossEnemy
     from evolution import EvolvedEnemy
     from presentation.versus_mode import VersusGame
 
     game = VersusGame(
         enemy_factory=EvolvedEnemy,
         boss_factory=BossEnemy,
-        # SE は両フィールド共通の発火点として EffectManager 系の sound 注入も将来検討
-        sound=None,
         local_side="left",
-        on_send_enemy=None,
     )
-    _ = EffectManager  # 将来の拡張用に import 維持
     game.run()
 
 

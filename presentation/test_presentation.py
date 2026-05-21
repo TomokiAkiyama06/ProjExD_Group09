@@ -329,7 +329,7 @@ def test_versus_handle_events_space_sends_enemy_from_left() -> None:
     pg.init()
     pg.display.set_mode((400, 200))
     game = VersusGame(enemy_factory=BaseEnemy)
-    game._running = True
+    game.start()
     right_before = len(game.get_field("right").get_world().get_enemies())
     pg.event.post(pg.event.Event(pg.KEYDOWN, {"key": pg.K_SPACE}))
     game.handle_events()
@@ -343,7 +343,7 @@ def test_versus_handle_events_return_sends_enemy_from_right() -> None:
     pg.init()
     pg.display.set_mode((400, 200))
     game = VersusGame(enemy_factory=BaseEnemy)
-    game._running = True
+    game.start()
     left_before = len(game.get_field("left").get_world().get_enemies())
     pg.event.post(pg.event.Event(pg.KEYDOWN, {"key": pg.K_RETURN}))
     game.handle_events()
@@ -357,7 +357,7 @@ def test_versus_handle_events_escape_stops_running() -> None:
     pg.init()
     pg.display.set_mode((400, 200))
     game = VersusGame()
-    game._running = True
+    game.start()
     assert game.is_running()
     pg.event.post(pg.event.Event(pg.KEYDOWN, {"key": pg.K_ESCAPE}))
     game.handle_events()
@@ -370,7 +370,7 @@ def test_versus_try_send_from_uses_default_when_no_factory() -> None:
     pg.init()
     pg.display.set_mode((400, 200))
     game = VersusGame()  # enemy_factory なし
-    game._running = True
+    game.start()
     assert game._try_send_from("left") is True
     right_enemies = game.get_field("right").get_world().get_enemies()
     assert len(right_enemies) == 1

@@ -140,6 +140,7 @@ class VersusGame:
         self._sound: SoundSink | None = sound
         self._local_side: str = local_side
         self._enemy_factory: EnemyFactory | None = enemy_factory
+        self._running: bool = False
         # 拠点座標を左右に対称配置
         left_spawn = [
             (SCREEN_WIDTH * 0.20, SCREEN_HEIGHT * 0.30),
@@ -302,6 +303,10 @@ class VersusGame:
 
     # ----- 起動経路（main.py --versus から呼ばれる） -----
 
+    def start(self) -> None:
+        """メインループを実行中の状態にする（テスト・外部起動用）。"""
+        self._running = True
+
     def run(self) -> None:
         """対戦モードのメインループを起動する。
 
@@ -315,7 +320,7 @@ class VersusGame:
         pg.init()
         screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         clock = pg.time.Clock()
-        self._running = True
+        self.start()
         while self._running:
             dt = clock.tick(FPS) / 1000.0
             self.handle_events()
@@ -331,7 +336,8 @@ class VersusGame:
         self._running = False
 
     def is_running(self) -> bool:
-        return getattr(self, "_running", False)
+        """メインループが継続中なら True を返す。"""
+        return self._running
 
     def handle_events(self) -> None:
         """Pygame イベントを処理する（QUIT / 敵送信キー）。"""
