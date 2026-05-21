@@ -14,7 +14,7 @@ import pygame as pg
 from .base_enemy import BaseEnemy
 from .base_hud import BaseHud
 from .builder import Builder, TowerFactory
-from .constants import BGM_MAIN, SCREEN_HEIGHT, SCREEN_WIDTH
+from .constants import BGM_MAIN, EVOLUTION_GRAPH_DEFAULT_ORIGIN, SCREEN_HEIGHT, SCREEN_WIDTH
 from .fighter import Fighter
 from .game import Game
 from .wave_manager import EnemyFactory, WaveManager, WavePhase
@@ -36,7 +36,13 @@ class EvolutionGraphSink(Protocol):
         origin: tuple[int, int],
         size: tuple[int, int] | None = None,
     ) -> None:
-        """グラフを描画する。"""
+        """適応度グラフを描画する。
+
+        Args:
+            screen: 描画先 Surface。
+            origin: グラフ左上の描画位置。
+            size: 描画サイズ。未指定ならグラフ側の既定値を使う。
+        """
 
 
 class TowerSelector(Protocol):
@@ -79,7 +85,7 @@ class SoloGame(Game):
         max_wave: int = 3,
         evolution_driver: EvolutionDriver | None = None,
         evolution_graph: EvolutionGraphSink | None = None,
-        evolution_graph_origin: tuple[int, int] = (10, 80),
+        evolution_graph_origin: tuple[int, int] = EVOLUTION_GRAPH_DEFAULT_ORIGIN,
     ) -> None:
         super().__init__()
         self._world: World = World(effects=effects, sound=sound)
@@ -127,6 +133,10 @@ class SoloGame(Game):
 
     def get_fighter(self) -> Fighter:
         return self._fighter
+
+    def get_generation(self) -> int:
+        """HUD とテスト用に現在表示中の進化世代を返す。"""
+        return self._generation
 
     def handle_events(self) -> None:
         """QUIT 処理に加え、両プレイヤーに単発イベントを dispatch する。"""

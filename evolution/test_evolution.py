@@ -18,9 +18,22 @@ from core.constants import (
 )
 from core.fortress import Fortress
 from core.world import World
+from evolution.evolution_driver import EvolutionDriver
 from evolution.evolution_manager import EvolutionManager
 from evolution.evolved_enemy import EvolvedEnemy
 from evolution.neural_net import DEFAULT_INPUT_SIZE, DEFAULT_OUTPUT_SIZE, NeuralNet
+
+
+class _CapturingEvolutionManager(EvolutionManager):
+    """next_generation に渡された fitness を検証用に保持する manager。"""
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.captured_fitness: list[float] | None = None
+
+    def next_generation(self, fitness: list[float]) -> list[NeuralNet]:
+        self.captured_fitness = list(fitness)
+        return super().next_generation(fitness)
 
 
 class _FixedBrain:
@@ -342,3 +355,44 @@ def test_tournament_select_returns_best_candidate() -> None:
     )
 
     assert selected is population[1]
+
+
+def test_evolution_driver_waits_until_population_is_evaluated() -> None:
+    manager = EvolutionManager(population_size=3)
+    now = 0.0
+    driver = EvolutionDriver(manager=manager, time_source=lambda: now)
+
+    driver.spawn_enemy((100.0, 100.0))
+    driver.spawn_enemy((100.0, 100.0))
+
+    assert not driver.finalize_wave()
+    assert manager.get_generation() == 1
+    assert driver.get_evaluated_population_count() == 2
+
+    driver.spawn_enemy((100.0, 100.0))
+
+    assert driver.finalize_wave()
+    assert manager.get_generation() == 2
+    assert driver.get_evaluated_population_count() == 0
+
+
+def test_evolution_driver_uses_locked_survival_time_for_dead_enemy() -> None:
+    now = 0.0
+
+    def current_time() -> float:
+        return now
+
+    manager = _CapturingEvolutionManager(population_size=2)
+    driver = EvolutionDriver(manager=manager, time_source=current_time)
+    early = driver.spawn_enemy((100.0, 100.0))
+    driver.spawn_enemy((100.0, 100.0))
+
+    now = 0.5
+    early.take_damage(early.get_hp())
+    driver.observe_frame()
+
+    now = 5.0
+    assert driver.finalize_wave()
+
+    assert manager.captured_fitness is not None
+    assert manager.captured_fitness[0] < manager.captured_fitness[1]

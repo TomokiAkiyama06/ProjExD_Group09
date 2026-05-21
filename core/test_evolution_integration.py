@@ -1,15 +1,8 @@
-"""SoloGame に進化AIが組み込まれていることの統合テスト。
-
-- EvolutionDriver.spawn_enemy で EvolvedEnemy が World に投入される
-- WaveManager の BATTLE → SUMMARY 遷移で EvolutionDriver.finalize_wave() が呼ばれる
-- 世代が進む（manager.get_generation が +1 される、SoloGame._generation も追従）
-- EvolutionGraph に世代記録が追記される
-"""
+"""SoloGame に進化AIが組み込まれていることの統合テスト。"""
 
 from __future__ import annotations
 
 import os
-import time
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
@@ -17,103 +10,124 @@ os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 import pygame as pg
 
 from core.solo_game import SoloGame
-from core.wave_manager import WavePhase
+from core.wave_manager import WaveManager
 from evolution.evolution_driver import EvolutionDriver
 from evolution.evolution_manager import EvolutionManager
 from evolution.evolved_enemy import EvolvedEnemy
 from presentation.evolution_graph import EvolutionGraph
 
+DRIVE_DT: float = 1.0 / 20.0
 
-def _make_solo_game(graph: EvolutionGraph | None = None) -> SoloGame:
-    """Driver/Graph 注入済みの SoloGame を作る共通ヘルパ。"""
+
+def _make_solo_game(
+    graph: EvolutionGraph | None = None,
+    population_size: int = 4,
+) -> tuple[SoloGame, EvolutionDriver]:
+    """Driver/Graph 注入済みの SoloGame と driver を作る共通ヘルパ。"""
     pg.init()
     pg.display.set_mode((400, 200))
-    manager = EvolutionManager(population_size=4)
+    manager = EvolutionManager(population_size=population_size)
     driver = EvolutionDriver(manager=manager, graph=graph)
-    return SoloGame(
+    game = SoloGame(
         evolution_driver=driver,
         evolution_graph=graph,
         max_wave=2,
     )
+    return game, driver
+
+
+def _drive_until_enemy_spawned(game: SoloGame) -> list[EvolvedEnemy]:
+    """通常の update だけで最初の敵が spawn するまで進める。"""
+    max_seconds = WaveManager.PREPARE_SECONDS + WaveManager.SPAWN_INTERVAL + 1.0
+    for _ in range(int(max_seconds / DRIVE_DT)):
+        game.update(DRIVE_DT)
+        enemies = game.get_world().get_enemies()
+        if enemies:
+            assert all(isinstance(enemy, EvolvedEnemy) for enemy in enemies)
+            return [enemy for enemy in enemies if isinstance(enemy, EvolvedEnemy)]
+    raise AssertionError("敵がスポーンしない")
+
+
+def _defeat_visible_enemies(game: SoloGame) -> None:
+    """現在 World にいる敵を倒し、ウェーブ進行を速める。"""
+    for enemy in list(game.get_world().get_enemies()):
+        enemy.take_damage(enemy.get_hp())
+
+
+def _drive_until_generation(
+    game: SoloGame,
+    driver: EvolutionDriver,
+    target_generation: int,
+) -> None:
+    """通常の update を進め、指定世代に到達するまで敵を順次倒す。"""
+    max_seconds = (
+        WaveManager.PREPARE_SECONDS
+        + WaveManager.SPAWN_INTERVAL * (WaveManager.BASE_SPAWN_COUNT + 1)
+        + WaveManager.SUMMARY_SECONDS
+        + 2.0
+    )
+    for _ in range(int(max_seconds / DRIVE_DT)):
+        game.update(DRIVE_DT)
+        _defeat_visible_enemies(game)
+        if driver.get_generation() >= target_generation:
+            return
+    raise AssertionError(f"世代が {target_generation} まで進まない")
 
 
 def test_solo_game_uses_driver_as_enemy_factory() -> None:
     """SoloGame が EvolutionDriver.spawn_enemy を enemy_factory として使う。"""
-    game = _make_solo_game()
+    game, _driver = _make_solo_game()
     try:
-        # PREPARE をスキップして BATTLE に
-        game.get_builder()._wave_skip_requested = True  # 内部 API: 簡易テスト用
-        for _ in range(2):
-            game.update(1.0 / 60.0)
-        # スポーン1体目を待つ（spawn 間隔 0.8s）
-        for _ in range(int(1.0 * 60)):
-            game.update(1.0 / 60.0)
-            if game.get_world().get_enemies():
-                break
-        enemies = game.get_world().get_enemies()
-        assert enemies, "1秒以上経過しても敵がスポーンしない"
-        # 全敵が EvolvedEnemy であること
-        assert all(isinstance(e, EvolvedEnemy) for e in enemies)
-        # generation スタンプが第1世代であること
-        assert all(e.get_generation() == 1 for e in enemies)
+        enemies = _drive_until_enemy_spawned(game)
+        assert enemies
+        assert all(enemy.get_generation() == 1 for enemy in enemies)
     finally:
         pg.quit()
 
 
 def test_generation_progresses_after_wave_summary() -> None:
-    """BATTLE → SUMMARY 遷移で世代が進み SoloGame._generation も更新される。"""
-    game = _make_solo_game()
-    driver = game._evolution_driver
-    assert driver is not None
+    """BATTLE → SUMMARY 遷移で世代が進み SoloGame の表示世代も更新される。"""
+    game, driver = _make_solo_game()
     try:
         assert driver.get_generation() == 1
-        assert game._generation == 1
-        # 強制的に SUMMARY フェーズに遷移したことにする
-        # （実機ではウェーブ完走待ちだが、テストでは内部状態を直接書き換える）
-        game._prev_wave_phase = WavePhase.BATTLE
-        # ドライバに 1 体スポーン記録を入れて finalize_wave が空振りしないようにする
-        driver.spawn_enemy((100.0, 100.0))
-        game._wave_manager._phase = WavePhase.SUMMARY
-        game._tick_evolution()
+        assert game.get_generation() == 1
+
+        _drive_until_generation(game, driver, target_generation=2)
+
         assert driver.get_generation() == 2
-        assert game._generation == 2
+        assert game.get_generation() == 2
     finally:
         pg.quit()
 
 
 def test_finalize_wave_appends_to_evolution_graph() -> None:
-    """finalize_wave 経由で EvolutionGraph.add が呼ばれて履歴が増える。"""
+    """ウェーブ完了時に EvolutionGraph.add が呼ばれて履歴が増える。"""
     graph = EvolutionGraph()
-    game = _make_solo_game(graph=graph)
-    driver = game._evolution_driver
-    assert driver is not None
+    game, driver = _make_solo_game(graph=graph)
     try:
-        # ダミーで spawn 1 体（spawned が空だと finalize_wave が False を返す）
-        driver.spawn_enemy((100.0, 100.0))
         assert graph.get_latest() is None
-        game._prev_wave_phase = WavePhase.BATTLE
-        game._wave_manager._phase = WavePhase.SUMMARY
-        game._tick_evolution()
+
+        _drive_until_generation(game, driver, target_generation=2)
+
         latest = graph.get_latest()
         assert latest is not None
-        # 進化前の世代（1）が記録されている
         assert latest.generation == 1
     finally:
         pg.quit()
 
 
 def test_solo_game_without_driver_keeps_generation_zero() -> None:
-    """EvolutionDriver を渡さない場合は従来通り _generation=0 のまま。"""
+    """EvolutionDriver を渡さない場合は従来通り generation=0 のまま。"""
     pg.init()
     pg.display.set_mode((400, 200))
     try:
         game = SoloGame(max_wave=1)
-        assert game._generation == 0
-        # phase 遷移しても進化が動かないこと
-        game._prev_wave_phase = WavePhase.BATTLE
-        game._wave_manager._phase = WavePhase.SUMMARY
-        game._tick_evolution()
-        assert game._generation == 0
+        assert game.get_generation() == 0
+
+        for _ in range(int((WaveManager.PREPARE_SECONDS + 1.0) / DRIVE_DT)):
+            game.update(DRIVE_DT)
+
+        assert game.get_generation() == 0
     finally:
         pg.quit()
 
@@ -128,59 +142,10 @@ def test_evolution_driver_factory_returns_evolved_enemy_with_brain() -> None:
     assert enemy.get_generation() == 1
 
 
-def test_observe_frame_locks_survival_time_at_death() -> None:
-    """observe_frame で死亡時点の時刻が記録され、その後の経過時間が加算されない。"""
-    manager = EvolutionManager(population_size=2)
-    driver = EvolutionDriver(manager=manager)
-    enemy = driver.spawn_enemy((100.0, 100.0))
-    # スポーン記録の初期値: end_time は None
-    record = driver._spawned[0]
-    assert record.end_time is None
-
-    # 敵を倒し、observe_frame で死亡時刻を確定
-    enemy.take_damage(enemy.get_hp())
-    assert enemy.is_dead()
-    death_time = time.monotonic()
-    driver.observe_frame(now=death_time)
-    assert record.end_time == death_time
-
-    # その後さらに時間が経過しても end_time は更新されない
-    later = death_time + 5.0
-    driver.observe_frame(now=later)
-    assert record.end_time == death_time
-
-
-def test_early_death_yields_smaller_survival_time_than_full_wave() -> None:
-    """早期に倒された敵の survival_time は、最後まで生存した敵より小さくなる。"""
-    manager = EvolutionManager(population_size=2)
-    driver = EvolutionDriver(manager=manager)
-    early = driver.spawn_enemy((100.0, 100.0))
-    late = driver.spawn_enemy((100.0, 100.0))
-
-    # spawn_time を強制的に過去にずらして、両者を同じ時刻起点に揃える
-    base = driver._spawned[0].spawn_time
-    driver._spawned[0].spawn_time = base
-    driver._spawned[1].spawn_time = base
-
-    # early は spawn 0.5 秒後に死亡、late はウェーブ末（5 秒）まで生存
-    early.take_damage(early.get_hp())
-    driver.observe_frame(now=base + 0.5)
-    finalize_now = base + 5.0
-    driver.observe_frame(now=finalize_now)
-
-    fit_early = driver._calc_record_fitness(driver._spawned[0], finalize_now)
-    fit_late = driver._calc_record_fitness(driver._spawned[1], finalize_now)
-    # damage_dealt も distance_improvement も同条件のため survival_time の差で比較できる
-    assert fit_early < fit_late
-    _ = late  # 参照保持（unused 警告回避）
-
-
 if __name__ == "__main__":
     test_solo_game_uses_driver_as_enemy_factory()
     test_generation_progresses_after_wave_summary()
     test_finalize_wave_appends_to_evolution_graph()
     test_solo_game_without_driver_keeps_generation_zero()
     test_evolution_driver_factory_returns_evolved_enemy_with_brain()
-    test_observe_frame_locks_survival_time_at_death()
-    test_early_death_yields_smaller_survival_time_than_full_wave()
     print("All evolution integration tests passed.")

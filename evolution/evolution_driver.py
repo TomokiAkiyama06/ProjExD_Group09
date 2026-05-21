@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import math
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Protocol
 
@@ -55,8 +56,11 @@ class EvolutionDriver:
     manager: EvolutionManager
     graph: GraphSink | None = None
     fortress_pos: tuple[float, float] = (0.0, 0.0)
+    time_source: Callable[[], float] = time.monotonic
     _spawn_index: int = 0
     _spawned: list[_SpawnRecord] = field(default_factory=list)
+    _fitness_sums: list[float] = field(default_factory=list)
+    _fitness_counts: list[int] = field(default_factory=list)
     _last_avg: float = 0.0
     _last_best: float = 0.0
 
@@ -78,6 +82,11 @@ class EvolutionDriver:
         """今ウェーブで spawn 済みの敵数を返す。"""
         return len(self._spawned)
 
+    def get_evaluated_population_count(self) -> int:
+        """現世代で少なくとも 1 回 fitness を得た個体数を返す。"""
+        self._ensure_fitness_buffers()
+        return sum(1 for count in self._fitness_counts if count > 0)
+
     def set_fortress_pos(self, pos: tuple[float, float]) -> None:
         """拠点座標を設定する（finalize_wave での距離計算に使う）。"""
         self.fortress_pos = (float(pos[0]), float(pos[1]))
@@ -92,7 +101,7 @@ class EvolutionDriver:
         終了タイムスタンプとして記録する。
         """
         if now is None:
-            now = time.monotonic()
+            now = self.time_source()
         for record in self._spawned:
             if record.end_time is not None:
                 continue
@@ -134,7 +143,7 @@ class EvolutionDriver:
             _SpawnRecord(
                 enemy=enemy,
                 brain=brain,
-                spawn_time=time.monotonic(),
+                spawn_time=self.time_source(),
                 initial_distance=initial_distance,
             )
         )
@@ -147,13 +156,21 @@ class EvolutionDriver:
 
         Returns:
             実際に世代が進んだ場合 True。前ウェーブでスポーンしていない場合は False。
+            現世代の未評価個体が残っている場合も False を返し、評価を次ウェーブへ
+            持ち越す。
         """
         if not self._spawned:
             return False
 
-        # finalize 時点でまだ end_time が確定していない個体（生存中扱い）にも
-        # この瞬間を終了時刻として記録する。
-        self.observe_frame()
+        now = self.time_source()
+        self._close_wave_records(now)
+        self._accumulate_spawned_fitness(now)
+        self._spawned.clear()
+
+        if not self._has_evaluated_full_population():
+            self._update_last_fitness_from_accumulated()
+            return False
+
         best, avg, fitness_list = self._compute_fitness_per_population()
         previous_generation = self.manager.get_generation()
         self.manager.next_generation(fitness_list)
@@ -162,19 +179,44 @@ class EvolutionDriver:
         if self.graph is not None:
             self.graph.add(previous_generation, best, avg)
         # ウェーブ計測のリセット
-        self._spawned.clear()
         self._spawn_index = 0
+        self._fitness_sums.clear()
+        self._fitness_counts.clear()
         return True
 
     # ----- internal -----
 
     def _compute_fitness_per_population(self) -> tuple[float, float, list[float]]:
-        """ウェーブで使われた NN ごとに fitness を集計し、population 順のリストにする。"""
-        population_ids = [id(nn) for nn in self.manager.population]
-        sums = [0.0] * len(population_ids)
-        counts = [0] * len(population_ids)
+        """現世代の評価済み fitness を population 順のリストにする。"""
+        self._ensure_fitness_buffers()
+        fitness_list = [
+            self._fitness_sums[i] / self._fitness_counts[i]
+            for i in range(len(self._fitness_counts))
+        ]
+        best = max(fitness_list) if fitness_list else 0.0
+        avg = sum(fitness_list) / len(fitness_list) if fitness_list else 0.0
+        return best, avg, fitness_list
 
-        now = time.monotonic()
+    def _ensure_fitness_buffers(self) -> None:
+        """現 population サイズに合わせて fitness 蓄積バッファを用意する。"""
+        population_size = len(self.manager.population)
+        if len(self._fitness_sums) == population_size:
+            return
+        self._fitness_sums = [0.0] * population_size
+        self._fitness_counts = [0] * population_size
+
+    def _close_wave_records(self, now: float) -> None:
+        """Finalize 時点で生存中の個体にも終了時刻と座標を記録する。"""
+        self.observe_frame(now=now)
+        for record in self._spawned:
+            if record.end_time is None:
+                record.end_time = now
+                record.end_pos = record.enemy.get_pos()
+
+    def _accumulate_spawned_fitness(self, now: float) -> None:
+        """このウェーブで spawn された個体の fitness を現世代の蓄積値へ加える。"""
+        self._ensure_fitness_buffers()
+        population_ids = [id(nn) for nn in self.manager.population]
         for record in self._spawned:
             try:
                 idx = population_ids.index(id(record.brain))
@@ -182,15 +224,27 @@ class EvolutionDriver:
                 # population が既に進化済みで brain が見つからない場合は無視
                 continue
             fitness = self._calc_record_fitness(record, now)
-            sums[idx] += fitness
-            counts[idx] += 1
+            self._fitness_sums[idx] += fitness
+            self._fitness_counts[idx] += 1
 
-        fitness_list = [
-            (sums[i] / counts[i]) if counts[i] > 0 else 0.0 for i in range(len(population_ids))
+    def _has_evaluated_full_population(self) -> bool:
+        """現世代の全個体が少なくとも 1 回評価済みなら True。"""
+        self._ensure_fitness_buffers()
+        return bool(self._fitness_counts) and all(count > 0 for count in self._fitness_counts)
+
+    def _update_last_fitness_from_accumulated(self) -> None:
+        """未評価個体が残る間も HUD 用の直近 best/avg を評価済み分から更新する。"""
+        fitness_values = [
+            fitness_sum / count
+            for fitness_sum, count in zip(
+                self._fitness_sums,
+                self._fitness_counts,
+                strict=True,
+            )
+            if count > 0
         ]
-        best = max(fitness_list) if fitness_list else 0.0
-        avg = sum(fitness_list) / len(fitness_list) if fitness_list else 0.0
-        return best, avg, fitness_list
+        self._last_best = max(fitness_values) if fitness_values else 0.0
+        self._last_avg = sum(fitness_values) / len(fitness_values) if fitness_values else 0.0
 
     def _calc_record_fitness(self, record: _SpawnRecord, now: float) -> float:
         """1 個体のスポーン記録から fitness を算出する。
