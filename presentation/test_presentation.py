@@ -321,6 +321,70 @@ def test_world_uses_boss_death_hook_without_generic_enemy_die() -> None:
     assert rec.se == [SE_BOSS_DIE]
 
 
+# ===== Versus 起動経路（Issue #93） =====
+
+
+def test_versus_handle_events_space_sends_enemy_from_left() -> None:
+    """SPACE で左フィールドから右へ敵が送信される。"""
+    pg.init()
+    pg.display.set_mode((400, 200))
+    game = VersusGame(enemy_factory=BaseEnemy)
+    game.start()
+    right_before = len(game.get_field("right").get_world().get_enemies())
+    pg.event.post(pg.event.Event(pg.KEYDOWN, {"key": pg.K_SPACE}))
+    game.handle_events()
+    right_after = len(game.get_field("right").get_world().get_enemies())
+    assert right_after == right_before + 1
+    pg.quit()
+
+
+def test_versus_handle_events_return_sends_enemy_from_right() -> None:
+    """RETURN で右フィールドから左へ敵が送信される。"""
+    pg.init()
+    pg.display.set_mode((400, 200))
+    game = VersusGame(enemy_factory=BaseEnemy)
+    game.start()
+    left_before = len(game.get_field("left").get_world().get_enemies())
+    pg.event.post(pg.event.Event(pg.KEYDOWN, {"key": pg.K_RETURN}))
+    game.handle_events()
+    left_after = len(game.get_field("left").get_world().get_enemies())
+    assert left_after == left_before + 1
+    pg.quit()
+
+
+def test_versus_handle_events_escape_stops_running() -> None:
+    """ESC で running フラグが False になる。"""
+    pg.init()
+    pg.display.set_mode((400, 200))
+    game = VersusGame()
+    game.start()
+    assert game.is_running()
+    pg.event.post(pg.event.Event(pg.KEYDOWN, {"key": pg.K_ESCAPE}))
+    game.handle_events()
+    assert not game.is_running()
+    pg.quit()
+
+
+def test_versus_try_send_from_uses_default_when_no_factory() -> None:
+    """Factory 未注入時は BaseEnemy をデフォルトで送る。"""
+    pg.init()
+    pg.display.set_mode((400, 200))
+    game = VersusGame()  # enemy_factory なし
+    game.start()
+    assert game._try_send_from("left") is True
+    right_enemies = game.get_field("right").get_world().get_enemies()
+    assert len(right_enemies) == 1
+    assert isinstance(right_enemies[0], BaseEnemy)
+    pg.quit()
+
+
+def test_main_has_run_versus_callable() -> None:
+    """Main モジュールに run_versus 関数が定義されている（--versus フラグ用）。"""
+    import main as main_module  # noqa: PLC0415 - main は遅延 import（pygame 副作用回避）
+
+    assert callable(main_module.run_versus)
+
+
 if __name__ == "__main__":
     test_evolution_graph_add_and_latest()
     test_evolution_graph_max_records_trims_old()
@@ -344,4 +408,9 @@ if __name__ == "__main__":
     test_wave_manager_plays_wave_start()
     test_boss_death_effect_plays_se()
     test_world_uses_boss_death_hook_without_generic_enemy_die()
+    test_versus_handle_events_space_sends_enemy_from_left()
+    test_versus_handle_events_return_sends_enemy_from_right()
+    test_versus_handle_events_escape_stops_running()
+    test_versus_try_send_from_uses_default_when_no_factory()
+    test_main_has_run_versus_callable()
     print("All presentation tests passed.")
