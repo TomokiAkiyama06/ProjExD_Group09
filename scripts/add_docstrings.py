@@ -76,17 +76,24 @@ EXACT_NAMES: dict[str, str] = {
 }
 
 
+def _capitalize_first(text: str) -> str:
+    """先頭文字を大文字化する（ruff D403 対策）。"""
+    if not text:
+        return text
+    return text[0].upper() + text[1:]
+
+
 def generate_docstring(name: str) -> str:
     """関数名から 1 行 docstring を生成する。"""
     if name in EXACT_NAMES:
-        return EXACT_NAMES[name]
+        return _capitalize_first(EXACT_NAMES[name])
     for pattern, template in NAME_PATTERNS:
         match = pattern.match(name)
         if match:
             inner = match.group(1) if match.groups() else name
             inner_label = inner if inner else name
-            return template.format(name=inner_label)
-    return f"{name} を行う。"
+            return _capitalize_first(template.format(name=inner_label))
+    return _capitalize_first(f"{name} を行う。")
 
 
 def _is_class_or_function(node: ast.AST) -> bool:

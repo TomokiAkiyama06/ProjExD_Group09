@@ -60,15 +60,19 @@ class BaseSkill:
         self._cooldown_left: float = 0.0
 
     def get_name(self) -> str:
+        """Name を返す。"""
         return self.name
 
     def get_cooldown(self) -> float:
+        """Cooldown を返す。"""
         return self.cooldown
 
     def get_cooldown_left(self) -> float:
+        """Cooldown_left を返す。"""
         return self._cooldown_left
 
     def can_use(self) -> bool:
+        """Use できるかどうかを返す。"""
         return self._cooldown_left <= 0
 
     def is_active(self) -> bool:
@@ -109,9 +113,11 @@ class DashAttackSkill(BaseSkill):
         self._invincible: bool = False
 
     def is_active(self) -> bool:
+        """Active かどうかを返す。"""
         return self._active_remaining > 0.0
 
     def is_invincible(self) -> bool:
+        """Invincible かどうかを返す。"""
         return self._invincible
 
     def _do_activate(self, fighter: BasePlayer, world: World) -> None:

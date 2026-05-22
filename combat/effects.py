@@ -53,15 +53,19 @@ class Particle:
         self._radius: int = max(1, int(radius))
 
     def get_pos(self) -> tuple[float, float]:
+        """Pos を返す。"""
         return self._pos
 
     def get_color(self) -> tuple[int, int, int]:
+        """Color を返す。"""
         return self._color
 
     def is_dead(self) -> bool:
+        """Dead かどうかを返す。"""
         return self._lifetime <= 0
 
     def update(self, dt: float) -> None:
+        """1 フレーム分の状態を更新する。"""
         self._pos = (
             self._pos[0] + self._velocity[0] * dt,
             self._pos[1] + self._velocity[1] * dt,
@@ -69,6 +73,7 @@ class Particle:
         self._lifetime = max(0.0, self._lifetime - dt)
 
     def draw(self, screen: pg.Surface) -> None:
+        """Surface に描画する。"""
         if self.is_dead():
             return
         # 寿命に応じて半径が縮む
@@ -99,19 +104,24 @@ class Shockwave:
         self._duration: float = max(0.001, self._remaining)
 
     def get_pos(self) -> tuple[float, float]:
+        """Pos を返す。"""
         return self._pos
 
     def get_radius(self) -> float:
+        """Radius を返す。"""
         ratio = 1.0 - (self._remaining / self._duration)
         return self._max_radius * ratio
 
     def is_dead(self) -> bool:
+        """Dead かどうかを返す。"""
         return self._remaining <= 0
 
     def update(self, dt: float) -> None:
+        """1 フレーム分の状態を更新する。"""
         self._remaining = max(0.0, self._remaining - dt)
 
     def draw(self, screen: pg.Surface) -> None:
+        """Surface に描画する。"""
         if self.is_dead():
             return
         radius = int(self.get_radius())
@@ -141,14 +151,17 @@ class EffectManager:
     # ----- accessors（主にテスト用） -----
 
     def get_particles(self) -> list[Particle]:
+        """Particles を返す。"""
         return self._particles
 
     def get_shockwaves(self) -> list[Shockwave]:
+        """Shockwaves を返す。"""
         return self._shockwaves
 
     # ----- EffectSink 実装 -----
 
     def update(self, dt: float) -> None:
+        """1 フレーム分の状態を更新する。"""
         for p in self._particles:
             p.update(dt)
         for s in self._shockwaves:
@@ -157,6 +170,7 @@ class EffectManager:
         self._shockwaves = [s for s in self._shockwaves if not s.is_dead()]
 
     def draw(self, screen: pg.Surface) -> None:
+        """Surface に描画する。"""
         for s in self._shockwaves:
             s.draw(screen)
         for p in self._particles:
@@ -168,6 +182,7 @@ class EffectManager:
         count: int = EFFECT_EXPLOSION_PARTICLES,
         color: tuple[int, int, int] = COLOR_EFFECT_EXPLOSION,
     ) -> None:
+        """Explosion エフェクトをスポーンする。"""
         for _ in range(count):
             angle = self._rng.random() * 2 * math.pi
             speed = self._rng.uniform(60.0, 220.0)
@@ -182,6 +197,7 @@ class EffectManager:
         count: int = EFFECT_HIT_PARTICLES,
         color: tuple[int, int, int] = COLOR_EFFECT_HIT,
     ) -> None:
+        """Hit エフェクトをスポーンする。"""
         for _ in range(count):
             angle = self._rng.random() * 2 * math.pi
             speed = self._rng.uniform(40.0, 120.0)
@@ -195,6 +211,7 @@ class EffectManager:
         direction: tuple[float, float],
         count: int = EFFECT_MUZZLE_PARTICLES,
     ) -> None:
+        """Muzzle_flash エフェクトをスポーンする。"""
         dx, dy = direction
         norm = math.hypot(dx, dy) or 1.0
         dx, dy = dx / norm, dy / norm
@@ -221,4 +238,5 @@ class EffectManager:
         color: tuple[int, int, int] = COLOR_EFFECT_SHOCKWAVE,
         duration: float = EFFECT_SHOCKWAVE_DURATION,
     ) -> None:
+        """Shockwave エフェクトをスポーンする。"""
         self._shockwaves.append(Shockwave(pos, radius, color, duration))

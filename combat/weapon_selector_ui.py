@@ -35,6 +35,7 @@ class WeaponSelectorUI:
         fighter: BasePlayer,
         weapon: BaseWeapon,
     ) -> None:
+        """Surface に描画する。"""
         x, y = fighter.get_pos()
         pos = (int(x) - self.ICON_SIZE // 2, int(y) + self.OFFSET_Y)
         weapon.draw_icon(screen, pos, self.ICON_SIZE, highlight=True)
