@@ -42,16 +42,19 @@ class StateBuffer:
         self.push(recv_time, state)
 
     def clear(self) -> None:
+        """Clear を行う。"""
         self.states.clear()
 
     # ----- accessors -----
 
     def latest(self) -> dict[str, Any] | None:
+        """Latest を行う。"""
         if not self.states:
             return None
         return self.states[-1][1]
 
     def latest_timestamp(self) -> float | None:
+        """Latest_timestamp を行う。"""
         if not self.states:
             return None
         return self.states[-1][0]
