@@ -42,15 +42,18 @@ class FireBullet(Bullet):
         self._explosion_remaining: float = 0.0
 
     def get_explosion_radius(self) -> float:
+        """Explosion_radius を返す。"""
         return self._explosion_radius
 
     def update(self, dt: float = 1.0 / 60.0) -> None:
         # 爆発描画のタイマーを進める
+        """1 フレーム分の状態を更新する。"""
         if self._explosion_remaining > 0.0:
             self._explosion_remaining = max(0.0, self._explosion_remaining - dt)
         super().update(dt)
 
     def check_hit(self, enemies: list[BaseEnemy] | None = None) -> bool:
+        """Hit を判定する。"""
         if self._consumed:
             return False
         if self._target.is_dead():
@@ -88,11 +91,13 @@ class FireBullet(Bullet):
 
     def is_consumed(self) -> bool:
         # 爆発の演出が残っているうちは "consumed" にしない
+        """Consumed かどうかを返す。"""
         if self._consumed and self._explosion_remaining > 0:
             return False
         return self._consumed
 
     def draw(self, screen: pg.Surface) -> None:
+        """Surface に描画する。"""
         if self._explosion_remaining > 0 and self._explosion_drawn_at is not None:
             cx, cy = int(self._explosion_drawn_at[0]), int(self._explosion_drawn_at[1])
             pg.draw.circle(
@@ -128,9 +133,11 @@ class FireTower(BaseTower):
         )
 
     def attack(self, target: BaseEnemy) -> Bullet | None:
+        """攻撃を行う。"""
         return FireBullet(pos=self._pos, target=target, damage=self._damage)
 
     def draw(self, screen: pg.Surface) -> None:
+        """Surface に描画する。"""
         super().draw(screen)
         # 中央に小さな火マーク（属性識別用）
         x, y = int(self._pos[0]), int(self._pos[1])

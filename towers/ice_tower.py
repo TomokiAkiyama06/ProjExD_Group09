@@ -39,12 +39,15 @@ class IceBullet(Bullet):
         self._slow_duration: float = max(0.0, float(slow_duration))
 
     def get_slow_factor(self) -> float:
+        """Slow_factor を返す。"""
         return self._slow_factor
 
     def get_slow_duration(self) -> float:
+        """Slow_duration を返す。"""
         return self._slow_duration
 
     def check_hit(self, enemies: list[BaseEnemy] | None = None) -> bool:
+        """Hit を判定する。"""
         _ = enemies
         hit = super().check_hit()
         if hit:
@@ -53,6 +56,7 @@ class IceBullet(Bullet):
         return hit
 
     def draw(self, screen: pg.Surface) -> None:
+        """Surface に描画する。"""
         x, y = int(self._pos[0]), int(self._pos[1])
         pg.draw.circle(screen, COLOR_ICE, (x, y), self.DEFAULT_RADIUS + 1)
 
@@ -78,9 +82,11 @@ class IceTower(BaseTower):
         )
 
     def attack(self, target: BaseEnemy) -> Bullet | None:
+        """攻撃を行う。"""
         return IceBullet(pos=self._pos, target=target, damage=self._damage)
 
     def draw(self, screen: pg.Surface) -> None:
+        """Surface に描画する。"""
         super().draw(screen)
         x, y = int(self._pos[0]), int(self._pos[1])
         pg.draw.circle(screen, COLOR_ICE, (x, y), 5)

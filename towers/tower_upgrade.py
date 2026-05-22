@@ -36,6 +36,7 @@ def get_upgrade_cost(tower: BaseTower) -> int:
 
 
 def can_upgrade(tower: BaseTower, gold: int) -> bool:
+    """Upgrade できるかどうかを返す。"""
     if tower.get_level() >= TOWER_MAX_LEVEL:
         return False
     return int(gold) >= get_upgrade_cost(tower)
@@ -74,6 +75,7 @@ def sell(tower: BaseTower, gold: int) -> int:
 
 
 def get_sell_refund(tower: BaseTower) -> int:
+    """Sell_refund を返す。"""
     return int(tower.get_total_invested() * TOWER_SELL_REFUND_RATIO)
 
 
@@ -99,6 +101,7 @@ class TowerUpgrade:
     cooldown_multiplier: float = 1.0
 
     def apply(self, tower: BaseTower) -> None:
+        """Apply を行う。"""
         tower.set_damage(tower.get_damage() + self.damage_bonus)
         tower.set_range(tower.get_range() + self.range_bonus)
         tower.set_cooldown(tower.get_cooldown() * self.cooldown_multiplier)

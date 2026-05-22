@@ -59,6 +59,7 @@ class TowerSelectorUI:
         world: World,
         mouse_pos: tuple[int, int] | None = None,
     ) -> None:
+        """Surface に描画する。"""
         self._draw_hotbar(screen, builder.get_selected_tower_type())
         if mouse_pos is not None:
             self._draw_ghost(

@@ -51,18 +51,22 @@ class LightningBolt(Bullet):
         self._remaining: float = max(0.0, float(duration))
 
     def get_chain_points(self) -> list[tuple[float, float]]:
+        """Chain_points を返す。"""
         return list(self._chain_points)
 
     def update(self, dt: float = 1.0 / 60.0) -> None:
+        """1 フレーム分の状態を更新する。"""
         self._remaining = max(0.0, self._remaining - dt)
         if self._remaining <= 0.0:
             self._consumed = True
 
     def check_hit(self, enemies: list[BaseEnemy] | None = None) -> bool:
+        """Hit を判定する。"""
         _ = enemies
         return False  # ダメージは生成時に適用済み
 
     def draw(self, screen: pg.Surface) -> None:
+        """Surface に描画する。"""
         if len(self._chain_points) < 2:
             return
         for prev, nxt in zip(self._chain_points[:-1], self._chain_points[1:], strict=True):
@@ -82,12 +86,15 @@ class _NullTarget:
         self._pos = pos
 
     def get_pos(self) -> tuple[float, float]:
+        """Pos を返す。"""
         return self._pos
 
     def is_dead(self) -> bool:
+        """Dead かどうかを返す。"""
         return True
 
     def take_damage(self, amount: int) -> None:
+        """Take_damage を行う。"""
         _ = amount
 
 
@@ -164,6 +171,7 @@ class LightningTower(BaseTower):
         return best
 
     def draw(self, screen: pg.Surface) -> None:
+        """Surface に描画する。"""
         super().draw(screen)
         x, y = int(self._pos[0]), int(self._pos[1])
         pg.draw.circle(screen, COLOR_LIGHTNING, (x, y), 5)

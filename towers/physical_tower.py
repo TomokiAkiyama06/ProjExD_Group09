@@ -50,6 +50,7 @@ class PhysicalTower(BaseTower):
         return Bullet(pos=self._pos, target=target, damage=self._damage + bonus)
 
     def draw(self, screen: pg.Surface) -> None:
+        """Surface に描画する。"""
         super().draw(screen)
         x, y = int(self._pos[0]), int(self._pos[1])
         pg.draw.circle(screen, COLOR_PHYSICAL, (x, y), 5)
