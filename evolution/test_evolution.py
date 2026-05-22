@@ -8,11 +8,11 @@ from core.base_tower import BaseTower
 from core.constants import (
     EARLY_GENERATION_THRESHOLD,
     EVOLUTION_ELITE_RATE,
+    EVOLUTION_MUTATION_RATE,
     EVOLUTION_TOURNAMENT_SIZE,
     FITNESS_DAMAGE_WEIGHT,
     FITNESS_DISTANCE_WEIGHT,
     FITNESS_SURVIVAL_WEIGHT,
-    GA_MUTATION_RATE,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
 )
@@ -224,7 +224,8 @@ def test_evolution_manager_uses_default_neural_net_shape() -> None:
 
 def test_evolution_manager_uses_default_mutation_rate() -> None:
     manager = EvolutionManager(population_size=1)
-    assert manager.mutation_rate == GA_MUTATION_RATE
+    assert EVOLUTION_MUTATION_RATE == 0.05
+    assert manager.mutation_rate == EVOLUTION_MUTATION_RATE
 
 
 def test_next_generation_keeps_population_size() -> None:
