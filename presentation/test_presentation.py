@@ -156,6 +156,47 @@ def test_sound_manager_auto_load_handles_missing_dir() -> None:
     assert sm.get_loaded_se_names() == []
 
 
+def test_sound_manager_default_init_invokes_auto_load() -> None:
+    """``SoundManager()`` のデフォルト動作で ``auto_load_from_dir`` が呼ばれる。
+
+    ``auto_load_from_dir`` をスパイし、``__init__`` 完了時点で 1 回呼ばれて
+    いることを確認する。
+    """
+    call_count = {"value": 0}
+    original = SoundManager.auto_load_from_dir
+
+    def spy(self: SoundManager, directory: str | None = None) -> int:
+        call_count["value"] += 1
+        return original(self, directory)
+
+    SoundManager.auto_load_from_dir = spy  # type: ignore[method-assign]
+    try:
+        sm = SoundManager(asset_dir="nonexistent_directory_for_test")
+    finally:
+        SoundManager.auto_load_from_dir = original  # type: ignore[method-assign]
+
+    assert call_count["value"] == 1
+    assert sm.get_loaded_se_names() == []
+
+
+def test_sound_manager_auto_load_false_skips_auto_load() -> None:
+    """``auto_load=False`` を渡すと ``__init__`` 内では走査されない。"""
+    call_count = {"value": 0}
+    original = SoundManager.auto_load_from_dir
+
+    def spy(self: SoundManager, directory: str | None = None) -> int:
+        call_count["value"] += 1
+        return original(self, directory)
+
+    SoundManager.auto_load_from_dir = spy  # type: ignore[method-assign]
+    try:
+        SoundManager(asset_dir="nonexistent_directory_for_test", auto_load=False)
+    finally:
+        SoundManager.auto_load_from_dir = original  # type: ignore[method-assign]
+
+    assert call_count["value"] == 0
+
+
 def test_null_sound_is_safe() -> None:
     null = _NullSound()
     null.play_se("anything")
@@ -393,6 +434,8 @@ if __name__ == "__main__":
     test_extended_hud_with_optional_panels()
     test_sound_manager_safe_when_no_sources()
     test_sound_manager_auto_load_handles_missing_dir()
+    test_sound_manager_default_init_invokes_auto_load()
+    test_sound_manager_auto_load_false_skips_auto_load()
     test_null_sound_is_safe()
     test_versus_game_initial_state()
     test_versus_send_enemy_consumes_gold_and_spawns_on_opponent()
