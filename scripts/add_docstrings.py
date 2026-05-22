@@ -17,6 +17,8 @@ from __future__ import annotations
 import ast
 import re
 import sys
+import tokenize
+from io import StringIO
 from pathlib import Path
 
 # 関数名の接頭辞 → 1 行 docstring を生成するパターン
@@ -101,8 +103,8 @@ def _is_class_or_function(node: ast.AST) -> bool:
     return isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
 
 
-def find_missing(filepath: Path) -> list[tuple[int, int, str]]:
-    """Docstring が抜けている公開定義の (挿入行, インデント, 名前) を返す。
+def find_missing(filepath: Path) -> list[tuple[int, int, int, str]]:
+    """Docstring が抜けている公開定義の位置情報を返す。
 
     `__init__` / 単一アンダースコア接頭辞は対象外（監査と同じ基準）。
     """
@@ -110,7 +112,7 @@ def find_missing(filepath: Path) -> list[tuple[int, int, str]]:
         tree = ast.parse(filepath.read_text(encoding="utf-8"))
     except SyntaxError:
         return []
-    results: list[tuple[int, int, str]] = []
+    results: list[tuple[int, int, int, str]] = []
     for node in ast.walk(tree):
         if not _is_class_or_function(node):
             continue
@@ -124,8 +126,64 @@ def find_missing(filepath: Path) -> list[tuple[int, int, str]]:
         if not body:
             continue
         first = body[0]
-        results.append((first.lineno, first.col_offset, node.name))
+        body_col = node.col_offset + 4 if first.lineno == node.lineno else first.col_offset
+        results.append((node.lineno, first.lineno, body_col, node.name))
     return results
+
+
+def _find_inline_suite_col(line: str) -> int | None:
+    """1 行定義のヘッダ終端 `:` の直後カラムを返す。"""
+    depth = 0
+    try:
+        tokens = tokenize.generate_tokens(StringIO(line).readline)
+        for token in tokens:
+            if token.type != tokenize.OP:
+                continue
+            if token.string in {"(", "[", "{"}:
+                depth += 1
+            elif token.string in {
+                ")",
+                "]",
+                "}",
+            }:
+                depth -= 1
+            elif token.string == ":" and depth == 0:
+                return token.end[1]
+    except tokenize.TokenError:
+        return None
+    return None
+
+
+def _split_line_ending(line: str) -> tuple[str, str]:
+    """行末文字と本文を分離する。"""
+    body = line.rstrip("\r\n")
+    return body, line[len(body) :]
+
+
+def _expand_inline_definition(
+    lines: list[str],
+    def_lineno: int,
+    body_col: int,
+    name: str,
+) -> bool:
+    """1 行定義を複数行へ展開し、docstring を挿入する。"""
+    line_index = def_lineno - 1
+    line_body, newline = _split_line_ending(lines[line_index])
+    line_ending = newline or "\n"
+    suite_col = _find_inline_suite_col(line_body)
+    if suite_col is None:
+        return False
+    inline_body = line_body[suite_col:].strip()
+    if not inline_body:
+        return False
+    indent = " " * body_col
+    docstring = generate_docstring(name)
+    lines[line_index : line_index + 1] = [
+        f"{line_body[:suite_col]}{line_ending}",
+        f'{indent}"""{docstring}"""{line_ending}',
+        f"{indent}{inline_body}{line_ending}",
+    ]
+    return True
 
 
 def insert_docstrings(filepath: Path) -> int:
@@ -140,7 +198,14 @@ def insert_docstrings(filepath: Path) -> int:
     lines = filepath.read_text(encoding="utf-8").splitlines(keepends=True)
     # 後ろから挿入することで行番号がずれない
     missing.sort(key=lambda item: item[0], reverse=True)
-    for body_lineno, body_col, name in missing:
+    for def_lineno, body_lineno, body_col, name in missing:
+        if body_lineno == def_lineno and _expand_inline_definition(
+            lines,
+            def_lineno,
+            body_col,
+            name,
+        ):
+            continue
         indent = " " * body_col
         docstring = generate_docstring(name)
         new_line = f'{indent}"""{docstring}"""\n'
