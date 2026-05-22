@@ -71,6 +71,7 @@ class SoundManager:
         return True
 
     def is_enabled(self) -> bool:
+        """Enabled かどうかを返す。"""
         return self._enabled
 
     # ----- loading -----
@@ -117,14 +118,17 @@ class SoundManager:
         return True
 
     def has_se(self, name: str) -> bool:
+        """Se を持つかどうかを返す。"""
         return name in self._se_cache
 
     def get_loaded_se_names(self) -> list[str]:
+        """Loaded_se_names を返す。"""
         return list(self._se_cache.keys())
 
     # ----- SoundSink Protocol -----
 
     def play_se(self, name: str) -> None:
+        """Se を再生する。"""
         if not self._enabled:
             return
         sound = self._se_cache.get(name)
@@ -153,6 +157,7 @@ class SoundManager:
         self._current_bgm = name
 
     def stop_bgm(self) -> None:
+        """Bgm を停止する。"""
         if not self._enabled:
             return
         with suppress(pg.error):
@@ -174,12 +179,14 @@ class SoundManager:
     # ----- volume -----
 
     def set_se_volume(self, value: float) -> None:
+        """Se_volume を設定する。"""
         self._se_volume = max(0.0, min(1.0, float(value)))
         for sound in self._se_cache.values():
             with suppress(pg.error):
                 sound.set_volume(self._se_volume)
 
     def set_bgm_volume(self, value: float) -> None:
+        """Bgm_volume を設定する。"""
         self._bgm_volume = max(0.0, min(1.0, float(value)))
         if self._enabled:
             with suppress(pg.error):

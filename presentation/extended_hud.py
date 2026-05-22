@@ -52,6 +52,7 @@ class ExtendedHud(BaseHud):
     # 既存 API（後方互換）
     def set_status(self, wave: int, money: int) -> None:
         # 旧呼出はメッセージリストに残す（未使用キーは無視）
+        """Status を設定する。"""
         self.messages = [f"wave={wave}", f"money={money}"]
 
     def draw(self, screen: pg.Surface, game_state: dict) -> None:

@@ -89,27 +89,35 @@ class PlayerField:
         self._gold: int = INITIAL_GOLD
 
     def get_side(self) -> str:
+        """Side を返す。"""
         return self._side
 
     def get_world(self) -> World:
+        """World を返す。"""
         return self._world
 
     def get_fortress(self) -> Fortress:
+        """Fortress を返す。"""
         return self._fortress
 
     def get_wave_manager(self) -> WaveManager:
+        """Wave_manager を返す。"""
         return self._wave_manager
 
     def get_gold(self) -> int:
+        """Gold を返す。"""
         return self._gold
 
     def set_gold(self, value: int) -> None:
+        """Gold を設定する。"""
         self._gold = max(0, int(value))
 
     def add_gold(self, value: int) -> None:
+        """Gold を追加する。"""
         self._gold = max(0, self._gold + int(value))
 
     def update(self, dt: float) -> None:
+        """1 フレーム分の状態を更新する。"""
         self._world.update(dt)
         self._wave_manager.update(self._world, dt)
 
@@ -175,33 +183,41 @@ class VersusGame:
     # ----- accessors -----
 
     def get_field(self, side: str) -> PlayerField:
+        """Field を返す。"""
         if side not in self._fields:
             msg = f"unknown side: {side!r}"
             raise ValueError(msg)
         return self._fields[side]
 
     def get_sides(self) -> list[str]:
+        """Sides を返す。"""
         return list(self.SIDES)
 
     def get_winner(self) -> str | None:
+        """Winner を返す。"""
         return self._winner
 
     def get_send_cost(self) -> int:
+        """Send_cost を返す。"""
         return self._send_cost
 
     def get_local_side(self) -> str:
+        """Local_side を返す。"""
         return self._local_side
 
     def is_finished(self) -> bool:
+        """Finished かどうかを返す。"""
         return self._winner is not None
 
     @staticmethod
     def opponent_of(side: str) -> str:
+        """Opponent_of を行う。"""
         return "right" if side == "left" else "left"
 
     # ----- gameplay -----
 
     def update(self, dt: float) -> None:
+        """1 フレーム分の状態を更新する。"""
         if self.is_finished():
             return
         for field in self._fields.values():
@@ -363,6 +379,7 @@ class VersusGame:
         else:
 
             def factory(pos: tuple[float, float]) -> BaseEnemy:
+                """Factory を行う。"""
                 return BaseEnemy(pos=pos)
 
         return self.send_enemy(sender_side, factory)
@@ -377,6 +394,7 @@ class VersusMode:
     right_score: int = 0
 
     def add_score(self, side: str, amount: int) -> None:
+        """Score を追加する。"""
         if side == "left":
             self.left_score += amount
         elif side == "right":
