@@ -65,7 +65,7 @@ class FastEnemy(BaseEnemy):
         )
 
     def draw(self, screen: pg.Surface) -> None:
-        """Surface に描画する。"""
+        """高速敵を通常敵より小さな黄色円で描画する。"""
         x, y = int(self._pos[0]), int(self._pos[1])
         pg.draw.circle(screen, COLOR_FAST, (x, y), self.DEFAULT_RADIUS - 2)
 
@@ -87,19 +87,19 @@ class ShieldedEnemy(BaseEnemy):
         self._max_shield: int = SHIELDED_ENEMY_SHIELD
 
     def get_shield(self) -> int:
-        """Shield を返す。"""
+        """現在残っている盾 HP を返す。"""
         return self._shield
 
     def get_max_shield(self) -> int:
-        """Max_shield を返す。"""
+        """盾 HP の初期最大値を返す。"""
         return self._max_shield
 
     def has_shield(self) -> bool:
-        """Shield を持つかどうかを返す。"""
+        """盾 HP が 1 以上残っていれば True を返す。"""
         return self._shield > 0
 
     def take_damage(self, amount: int) -> None:
-        """Take_damage を行う。"""
+        """盾が残っていれば盾から先にダメージを吸収する。"""
         if amount <= 0:
             return
         if self._shield > 0:
@@ -110,7 +110,7 @@ class ShieldedEnemy(BaseEnemy):
             super().take_damage(amount)
 
     def draw(self, screen: pg.Surface) -> None:
-        """Surface に描画する。"""
+        """盾持ち敵本体と、盾が残っている間だけ外周リングを描画する。"""
         x, y = int(self._pos[0]), int(self._pos[1])
         pg.draw.circle(screen, COLOR_SHIELDED, (x, y), self.DEFAULT_RADIUS + 2)
         if self._shield > 0:

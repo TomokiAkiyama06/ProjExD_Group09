@@ -223,7 +223,9 @@ def expand_targets(args: list[str]) -> list[Path]:
             paths.append(root)
         elif root.is_dir():
             paths.extend(sorted(root.rglob("*.py")))
-    # キャッシュ・venv・test_*.py を除外
+    # キャッシュ・venv・test_*.py を除外。
+    # main.py のようなリポジトリ直下の単独エントリポイントは、ディレクトリ指定だけでは
+    # 走査対象に入らないため、必要な場合は引数で明示する。
     exclude_parts = {"__pycache__", ".venv", "venv", ".git"}
     return [
         path

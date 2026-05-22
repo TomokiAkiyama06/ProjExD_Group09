@@ -75,7 +75,7 @@ class BossEnemy(BaseEnemy):
         self._death_announced: bool = False
 
     def get_special_timer(self) -> float:
-        """Special_timer を返す。"""
+        """次の特殊範囲攻撃までの残り秒数を返す。"""
         return self._special_timer
 
     def trigger_death_effect(self, world: World) -> None:
@@ -130,7 +130,7 @@ class BossEnemy(BaseEnemy):
         super().update(fortress, dt)
 
     def draw(self, screen: pg.Surface) -> None:
-        """Surface に描画する。"""
+        """ボス本体と頭上の HP バーを描画する。"""
         x, y = int(self._pos[0]), int(self._pos[1])
         pg.draw.circle(screen, COLOR_BOSS, (x, y), BOSS_RADIUS)
         # HP バー
