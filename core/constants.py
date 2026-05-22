@@ -5,8 +5,8 @@
 """
 
 # ===== 画面・描画（ベース） =====
-SCREEN_WIDTH: int = 960
-SCREEN_HEIGHT: int = 540
+SCREEN_WIDTH: int = 1280
+SCREEN_HEIGHT: int = 720
 FPS: int = 60
 
 # ===== 色 =====
