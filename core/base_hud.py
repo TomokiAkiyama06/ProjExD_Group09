@@ -34,6 +34,7 @@ class BaseHud:
         self._max_hp: int = FORTRESS_MAX_HP
 
     def set_max_hp(self, value: int) -> None:
+        """Max_hp を設定する。"""
         self._max_hp = max(1, value)
 
     def draw(self, screen: pg.Surface, game_state: dict) -> None:

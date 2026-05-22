@@ -48,72 +48,92 @@ class BaseTower:
 
     @property
     def damage(self) -> int:
+        """Damage を行う。"""
         return self._damage
 
     @damage.setter
     def damage(self, value: int) -> None:
+        """Damage を行う。"""
         self.set_damage(value)
 
     @property
     def range(self) -> float:
+        """Range を行う。"""
         return self._range
 
     @range.setter  # noqa: A003
     def range(self, value: float) -> None:
+        """Range を行う。"""
         self.set_range(value)
 
     @property
     def cooldown(self) -> float:
+        """Cooldown を行う。"""
         return self._cooldown
 
     @cooldown.setter
     def cooldown(self, value: float) -> None:
+        """Cooldown を行う。"""
         self.set_cooldown(value)
 
     @property
     def fire_cooldown(self) -> float:
+        """Fire_cooldown を行う。"""
         return self._cooldown
 
     @fire_cooldown.setter
     def fire_cooldown(self, value: float) -> None:
+        """Fire_cooldown を行う。"""
         self.set_cooldown(value)
 
     def get_pos(self) -> tuple[float, float]:
+        """Pos を返す。"""
         return self._pos
 
     def set_pos(self, x: float, y: float) -> None:
+        """Pos を設定する。"""
         self._pos = (x, y)
 
     def get_range(self) -> float:
+        """Range を返す。"""
         return self._range
 
     def set_range(self, value: float) -> None:
+        """Range を設定する。"""
         self._range = max(0.0, value)
 
     def get_damage(self) -> int:
+        """Damage を返す。"""
         return self._damage
 
     def set_damage(self, value: int) -> None:
+        """Damage を設定する。"""
         self._damage = max(0, value)
 
     def get_cooldown(self) -> float:
+        """Cooldown を返す。"""
         return self._cooldown
 
     def set_cooldown(self, value: float) -> None:
+        """Cooldown を設定する。"""
         self._cooldown = max(0.0, value)
 
     # --- upgrade hooks (担当③) ---
 
     def get_level(self) -> int:
+        """Level を返す。"""
         return self._level
 
     def set_level(self, value: int) -> None:
+        """Level を設定する。"""
         self._level = max(1, int(value))
 
     def get_total_invested(self) -> int:
+        """Total_invested を返す。"""
         return self._total_invested
 
     def add_invested(self, amount: int) -> None:
+        """Invested を追加する。"""
         self._total_invested = max(0, self._total_invested + int(amount))
 
     def find_target(self, enemies: list[BaseEnemy]) -> BaseEnemy | None:
@@ -158,6 +178,7 @@ class BaseTower:
         return [bullet]
 
     def draw(self, screen: pg.Surface) -> None:
+        """Surface に描画する。"""
         x, y = int(self._pos[0]), int(self._pos[1])
         # 射程の薄いリング
         try:

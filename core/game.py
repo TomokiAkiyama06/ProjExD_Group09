@@ -29,9 +29,11 @@ class Game:
         return self._dt
 
     def is_running(self) -> bool:
+        """Running かどうかを返す。"""
         return self._running
 
     def stop(self) -> None:
+        """停止する。"""
         self._running = False
 
     def handle_events(self) -> None:

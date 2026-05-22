@@ -36,18 +36,23 @@ class BasePlayer:
         self._speed: float = self.DEFAULT_SPEED
 
     def get_player_id(self) -> int:
+        """Player_id を返す。"""
         return self._player_id
 
     def get_pos(self) -> tuple[float, float]:
+        """Pos を返す。"""
         return self._pos
 
     def set_pos(self, x: float, y: float) -> None:
+        """Pos を設定する。"""
         self._pos = (x, y)
 
     def get_hp(self) -> int:
+        """Hp を返す。"""
         return self._hp
 
     def set_hp(self, value: int) -> None:
+        """Hp を設定する。"""
         self._hp = max(0, min(self._max_hp, value))
 
     def update(self, input_state: dict) -> None:
@@ -65,5 +70,6 @@ class BasePlayer:
         self._pos = (new_x, new_y)
 
     def draw(self, screen: pg.Surface) -> None:
+        """Surface に描画する。"""
         x, y = int(self._pos[0]), int(self._pos[1])
         pg.draw.circle(screen, COLOR_PLAYER, (x, y), self.DEFAULT_RADIUS)

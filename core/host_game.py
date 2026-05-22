@@ -57,12 +57,15 @@ class HostGame(SoloGame):
     # ----- accessors -----
 
     def get_server(self) -> NetServer:
+        """Server を返す。"""
         return self._server
 
     def get_bound_address(self) -> Address | None:
+        """Bound_address を返す。"""
         return self._server.get_bound_address()
 
     def get_state_seq(self) -> int:
+        """State_seq を返す。"""
         return self._state_seq
 
     # ----- lifecycle -----
@@ -75,6 +78,7 @@ class HostGame(SoloGame):
         self._network_started = True
 
     def stop_network(self) -> None:
+        """Network を停止する。"""
         if not self._network_started:
             return
         self._server.stop()

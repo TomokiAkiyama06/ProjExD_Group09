@@ -58,15 +58,19 @@ class WaveManager:
     # ----- accessors -----
 
     def get_wave(self) -> int:
+        """Wave を返す。"""
         return self._wave
 
     def get_max_wave(self) -> int:
+        """Max_wave を返す。"""
         return self._max_wave
 
     def get_phase(self) -> WavePhase:
+        """Phase を返す。"""
         return self._phase
 
     def get_remaining_to_spawn(self) -> int:
+        """Remaining_to_spawn を返す。"""
         return self._remaining_to_spawn
 
     def is_finished(self) -> bool:

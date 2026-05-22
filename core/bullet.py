@@ -33,12 +33,15 @@ class Bullet:
         self._consumed: bool = False
 
     def get_pos(self) -> tuple[float, float]:
+        """Pos を返す。"""
         return self._pos
 
     def get_damage(self) -> int:
+        """Damage を返す。"""
         return self._damage
 
     def get_target(self) -> BaseEnemy:
+        """Target を返す。"""
         return self._target
 
     def is_consumed(self) -> bool:
@@ -87,5 +90,6 @@ class Bullet:
         return False
 
     def draw(self, screen: pg.Surface) -> None:
+        """Surface に描画する。"""
         x, y = int(self._pos[0]), int(self._pos[1])
         pg.draw.circle(screen, COLOR_BULLET, (x, y), self.DEFAULT_RADIUS)

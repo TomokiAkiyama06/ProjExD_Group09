@@ -39,18 +39,23 @@ class Fortress:
         self._hp: int = max_hp
 
     def get_pos(self) -> tuple[float, float]:
+        """Pos を返す。"""
         return self._pos
 
     def set_pos(self, x: float, y: float) -> None:
+        """Pos を設定する。"""
         self._pos = (x, y)
 
     def get_hp(self) -> int:
+        """Hp を返す。"""
         return self._hp
 
     def set_hp(self, value: int) -> None:
+        """Hp を設定する。"""
         self._hp = max(0, min(self._max_hp, value))
 
     def get_max_hp(self) -> int:
+        """Max_hp を返す。"""
         return self._max_hp
 
     def take_damage(self, amount: int) -> None:
@@ -60,6 +65,7 @@ class Fortress:
         self._hp = max(0, self._hp - amount)
 
     def is_destroyed(self) -> bool:
+        """Destroyed かどうかを返す。"""
         return self._hp <= 0
 
     def draw(self, screen: pg.Surface) -> None:
