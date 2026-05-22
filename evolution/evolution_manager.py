@@ -165,24 +165,41 @@ class EvolutionManager:
         return population[int(best_index)]
 
     def next_generation(self, fitness: list[float]) -> list[NeuralNet]:
-        """適応度の高い個体を親として次世代を生成し、世代番号をインクリメントする。"""
+        """次世代の個体群を生成し、世代番号をインクリメントする。
+
+        フローは DESIGN.md §4.2 に準拠:
+
+        1. エリート選択（上位 ``EVOLUTION_ELITE_RATE`` をそのまま次世代へ）
+        2. 残り枠は ``tournament_select`` × 2 で親 2 体を選び、``crossover`` で
+           子を生成 → ``mutate`` で突然変異を適用 → 次世代へ追加
+
+        Args:
+            fitness: 現世代の各個体に対応する適応度のリスト
+
+        Returns:
+            次世代の個体群（``population_size`` 個）
+
+        Raises:
+            ValueError: 適応度リストの長さが現世代の個体数と一致しない場合
+        """
         if len(fitness) != len(self.population):
             raise ValueError("fitness length must match population length")
 
-        order = np.argsort(fitness)[::-1]
-        parent_count = max(1, len(order) // 3)
-        parents = [self.population[index] for index in order[:parent_count]]
-        self.population = [
-            self._mutated_copy(parents[i % len(parents)]) for i in range(self.population_size)
-        ]
+        # 1) エリート選択：上位個体はクローンせずそのまま残す（最良個体の保存）
+        elites = self.select_elites(self.population, fitness)
+        next_population: list[NeuralNet] = list(elites)
+
+        # 2) 残り枠は tournament_select × 2 → crossover → mutate
+        while len(next_population) < self.population_size:
+            parent_a = self.tournament_select(self.population, fitness)
+            parent_b = self.tournament_select(self.population, fitness)
+            child = self.crossover(parent_a, parent_b)
+            self.mutate(child, rate=self.mutation_rate)
+            next_population.append(child)
+
+        self.population = next_population[: self.population_size]
         self._generation += 1
         return self.population
-
-    def _mutated_copy(self, net: NeuralNet) -> NeuralNet:
-        """親個体をコピーして突然変異を適用した子個体を返す。"""
-        child = net.copy()
-        self.mutate(child, rate=self.mutation_rate)
-        return child
 
     @staticmethod
     def _validate_mutation_params(rate: float, scale: float) -> None:
