@@ -27,6 +27,7 @@ def _build_solo_kwargs() -> dict:
     from core.constants import BOSS_WAVE_MODULO
     from evolution import EvolutionDriver, EvolutionManager
     from presentation import EvolutionGraph
+    from presentation.sound_manager import SoundManager
     from towers import (
         FireTower,
         IceTower,
@@ -41,6 +42,8 @@ def _build_solo_kwargs() -> dict:
         manager=evolution_manager,
         graph=evolution_graph,
     )
+    # SoundManager(auto_load=True) で assets/sound/ 内の SE を自動キャッシュする
+    sound = SoundManager()
 
     return {
         "tower_factories": {
@@ -51,6 +54,7 @@ def _build_solo_kwargs() -> dict:
         },
         "tower_selector": TowerSelectorUI(),
         "effects": EffectManager(),
+        "sound": sound,
         "fighter_weapons": [weapon_cls() for weapon_cls in WEAPON_CYCLE],
         "fighter_skills": [skill_cls() for skill_cls in SKILL_CYCLE],
         "weapon_selector": WeaponSelectorUI(),

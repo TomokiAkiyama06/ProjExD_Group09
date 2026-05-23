@@ -47,13 +47,26 @@ class SoundManager:
         asset_dir: str | Path = SOUND_ASSET_DIR,
         se_volume: float = SOUND_DEFAULT_SE_VOLUME,
         bgm_volume: float = SOUND_DEFAULT_BGM_VOLUME,
+        auto_load: bool = True,
     ) -> None:
+        """SoundManager を初期化し、必要なら asset_dir 配下の SE を自動ロードする。
+
+        Args:
+            asset_dir: SE/BGM 検索先のディレクトリ。
+            se_volume: SE 初期音量（0.0〜1.0 にクランプ）。
+            bgm_volume: BGM 初期音量（0.0〜1.0 にクランプ）。
+            auto_load: True なら ``__init__`` 末尾で ``auto_load_from_dir`` を
+                呼び ``asset_dir`` 配下の SE をキャッシュする。テスト等で
+                明示制御したい場合に False を指定する。
+        """
         self._asset_dir: Path = Path(asset_dir)
         self._se_volume: float = max(0.0, min(1.0, float(se_volume)))
         self._bgm_volume: float = max(0.0, min(1.0, float(bgm_volume)))
         self._se_cache: dict[str, pg.mixer.Sound] = {}
         self._current_bgm: str | None = None
         self._enabled: bool = self._init_mixer()
+        if auto_load:
+            self.auto_load_from_dir()
 
     # ----- lifecycle -----
 
