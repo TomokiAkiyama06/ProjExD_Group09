@@ -126,12 +126,15 @@ class SoloGame(Game):
         self._world.get_sound().play_bgm(BGM_MAIN)
 
     def get_world(self) -> World:
+        """World を返す。"""
         return self._world
 
     def get_builder(self) -> Builder:
+        """Builder を返す。"""
         return self._builder
 
     def get_fighter(self) -> Fighter:
+        """Fighter を返す。"""
         return self._fighter
 
     def get_generation(self) -> int:

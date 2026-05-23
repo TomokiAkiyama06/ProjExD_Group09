@@ -42,37 +42,48 @@ class BaseEnemy:
 
     @property
     def reward(self) -> int:
+        """撃破時に得られる報酬量を返す。"""
         return self._reward
 
     @reward.setter
     def reward(self, value: int) -> None:
+        """撃破報酬を 0 以上に丸めて設定する。"""
         self.set_reward(value)
 
     def get_pos(self) -> tuple[float, float]:
+        """現在座標を返す。"""
         return self._pos
 
     def set_pos(self, x: float, y: float) -> None:
+        """現在座標を設定する。"""
         self._pos = (x, y)
 
     def get_hp(self) -> int:
+        """現在 HP を返す。"""
         return self._hp
 
     def get_max_hp(self) -> int:
+        """最大 HP を返す。"""
         return self._max_hp
 
     def get_damage(self) -> int:
+        """拠点到達時に与えるダメージを返す。"""
         return self._damage
 
     def get_reward(self) -> int:
+        """撃破時に得られる報酬量を返す。"""
         return self._reward
 
     def set_reward(self, value: int) -> None:
+        """撃破報酬を 0 以上に丸めて設定する。"""
         self._reward = max(0, value)
 
     def get_speed(self) -> float:
+        """基礎移動速度を返す。"""
         return self._speed
 
     def set_speed(self, value: float) -> None:
+        """基礎移動速度を 0 以上に丸めて設定する。"""
         self._speed = max(0.0, value)
 
     def get_effective_speed(self) -> float:
@@ -80,9 +91,11 @@ class BaseEnemy:
         return self._speed * self._speed_factor
 
     def get_speed_factor(self) -> float:
+        """氷タワーなどで適用中の速度倍率を返す。"""
         return self._speed_factor
 
     def get_slow_remaining(self) -> float:
+        """速度低下効果の残り秒数を返す。"""
         return self._slow_remaining
 
     def apply_slow(self, factor: float, duration: float) -> None:
@@ -99,14 +112,17 @@ class BaseEnemy:
         self._slow_remaining = max(self._slow_remaining, duration)
 
     def has_reached_fortress(self) -> bool:
+        """拠点へ到達してダメージ処理済みなら True を返す。"""
         return self._reached
 
     def take_damage(self, amount: int) -> None:
+        """正のダメージ量だけ HP を減らし、0 未満にはしない。"""
         if amount <= 0:
             return
         self._hp = max(0, self._hp - amount)
 
     def is_dead(self) -> bool:
+        """現在 HP が 0 以下なら True を返す。"""
         return self._hp <= 0
 
     def update(self, fortress: Fortress, dt: float = 1.0 / 60.0) -> None:
@@ -137,5 +153,6 @@ class BaseEnemy:
         self._pos = (nx, ny)
 
     def draw(self, screen: pg.Surface) -> None:
+        """通常敵を現在座標に赤い円で描画する。"""
         x, y = int(self._pos[0]), int(self._pos[1])
         pg.draw.circle(screen, COLOR_ENEMY, (x, y), self.DEFAULT_RADIUS)

@@ -116,6 +116,7 @@ class NetClient:
         self._thread.start()
 
     def stop(self) -> None:
+        """停止する。"""
         self._stop_event.set()
         if self._thread is not None:
             self._thread.join(timeout=1.0)
@@ -188,6 +189,7 @@ class NetClient:
             return self._latest_state
 
     def poll_events(self) -> list[dict[str, Any]]:
+        """Poll_events を行う。"""
         out: list[dict[str, Any]] = []
         while True:
             try:
@@ -199,20 +201,25 @@ class NetClient:
     # ----- status -----
 
     def is_connected(self) -> bool:
+        """Connected かどうかを返す。"""
         return self._connected.is_set() and not self._lost_connection
 
     def get_player_id(self) -> int | None:
+        """Player_id を返す。"""
         return self._player_id
 
     def has_lost_connection(self) -> bool:
+        """Lost_connection を持つかどうかを返す。"""
         return self._lost_connection
 
     def get_errors(self) -> list[str]:
+        """Errors を返す。"""
         return list(self._errors)
 
     # ----- per-frame -----
 
     def update(self, now: float | None = None) -> None:
+        """1 フレーム分の状態を更新する。"""
         if now is None:
             now = time.monotonic()
         self._maybe_send_ping(now)

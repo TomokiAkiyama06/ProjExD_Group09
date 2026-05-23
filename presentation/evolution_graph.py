@@ -66,15 +66,19 @@ class EvolutionGraph:
     # ----- accessors -----
 
     def get_records(self) -> list[GenerationRecord]:
+        """Records を返す。"""
         return list(self._records)
 
     def get_width(self) -> int:
+        """Width を返す。"""
         return self._width
 
     def get_height(self) -> int:
+        """Height を返す。"""
         return self._height
 
     def get_latest(self) -> GenerationRecord | None:
+        """Latest を返す。"""
         return self._records[-1] if self._records else None
 
     # ----- mutators -----
@@ -91,6 +95,7 @@ class EvolutionGraph:
             self._records = self._records[-self._max_records :]
 
     def clear(self) -> None:
+        """Clear を行う。"""
         self._records.clear()
 
     # ----- draw -----

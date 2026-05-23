@@ -60,15 +60,19 @@ class BaseSkill:
         self._cooldown_left: float = 0.0
 
     def get_name(self) -> str:
+        """UI 表示や切り替え識別に使うスキル名を返す。"""
         return self.name
 
     def get_cooldown(self) -> float:
+        """発動後に再使用可能になるまでの基準秒数を返す。"""
         return self.cooldown
 
     def get_cooldown_left(self) -> float:
+        """現在残っているクールタイム秒数を返す。"""
         return self._cooldown_left
 
     def can_use(self) -> bool:
+        """残りクールタイムが 0 秒以下なら True を返す。"""
         return self._cooldown_left <= 0
 
     def is_active(self) -> bool:
@@ -109,9 +113,11 @@ class DashAttackSkill(BaseSkill):
         self._invincible: bool = False
 
     def is_active(self) -> bool:
+        """ダッシュ効果の残り時間がある間 True を返す。"""
         return self._active_remaining > 0.0
 
     def is_invincible(self) -> bool:
+        """ダッシュ中の無敵状態なら True を返す。"""
         return self._invincible
 
     def _do_activate(self, fighter: BasePlayer, world: World) -> None:

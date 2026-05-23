@@ -132,13 +132,16 @@ class NetServer:
     # ----- accessors -----
 
     def get_clients(self) -> list[PlayerInfo]:
+        """Clients を返す。"""
         with self._lock:
             return list(self._clients.values())
 
     def get_errors(self) -> list[str]:
+        """Errors を返す。"""
         return list(self._errors)
 
     def get_bound_address(self) -> Address | None:
+        """Bound_address を返す。"""
         if self._sock is None:
             return None
         try:
@@ -280,6 +283,7 @@ class NetServer:
         return True
 
     def broadcast(self, msg: dict[str, Any]) -> None:
+        """全クライアントへ送信する。"""
         with self._lock:
             targets = [c.address for c in self._clients.values()]
         for addr in targets:

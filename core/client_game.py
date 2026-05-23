@@ -89,12 +89,15 @@ class ClientGame(Game):
     # ----- accessors -----
 
     def get_client(self) -> NetClient:
+        """Client を返す。"""
         return self._client
 
     def get_state_buffer(self) -> StateBuffer:
+        """State_buffer を返す。"""
         return self._state_buffer
 
     def is_connection_lost(self) -> bool:
+        """Connection_lost かどうかを返す。"""
         return self._connection_lost
 
     # ----- lifecycle -----

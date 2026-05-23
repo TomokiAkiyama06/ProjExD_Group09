@@ -118,6 +118,7 @@ def run_solo() -> None:
 
 
 def main() -> None:
+    """エントリーポイント。argparse で起動モードを切替えて対応する run_* を呼ぶ。"""
     parser = argparse.ArgumentParser(description="共進化の砦（仮）")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--host", action="store_true", help="ホストモード（プレイヤー1）")

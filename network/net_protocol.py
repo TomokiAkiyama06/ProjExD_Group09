@@ -139,6 +139,7 @@ MSG_ACK: str = "ack"
 
 
 def make_input(seq: int, player_id: int, input_payload: dict[str, Any]) -> InputMessage:
+    """Make_input を行う。"""
     return {
         "type": MSG_INPUT,
         "seq": int(seq),
@@ -156,6 +157,7 @@ def make_state(  # noqa: PLR0913 - state スキーマの全フィールドを引
     fortress_hp: int = 0,
     wave: int = 0,
 ) -> StateMessage:
+    """Make_state を行う。"""
     return {
         "type": MSG_STATE,
         "seq": int(seq),
@@ -174,6 +176,7 @@ def make_event(
     *,
     ack_required: bool = True,
 ) -> EventMessage:
+    """Make_event を行う。"""
     return {
         "type": MSG_EVENT,
         "seq": int(seq),
@@ -184,20 +187,25 @@ def make_event(
 
 
 def make_connect(name: str) -> ConnectMessage:
+    """Make_connect を行う。"""
     return {"type": MSG_CONNECT, "name": str(name)}
 
 
 def make_connect_ok(player_id: int) -> ConnectOkMessage:
+    """Make_connect_ok を行う。"""
     return {"type": MSG_CONNECT_OK, "player_id": int(player_id)}
 
 
 def make_ping(seq: int) -> PingMessage:
+    """Make_ping を行う。"""
     return {"type": MSG_PING, "seq": int(seq)}
 
 
 def make_pong(seq: int) -> PongMessage:
+    """Make_pong を行う。"""
     return {"type": MSG_PONG, "seq": int(seq)}
 
 
 def make_ack(seq: int) -> AckMessage:
+    """Make_ack を行う。"""
     return {"type": MSG_ACK, "seq": int(seq)}

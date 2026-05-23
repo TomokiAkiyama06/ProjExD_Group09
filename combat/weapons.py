@@ -66,9 +66,11 @@ class AreaBullet(Bullet):
         self._explosion_radius: float = max(0.0, float(explosion_radius))
 
     def get_explosion_radius(self) -> float:
+        """着弾時に範囲ダメージを与える半径を返す。"""
         return self._explosion_radius
 
     def check_hit(self, enemies: list[BaseEnemy] | None = None) -> bool:
+        """対象との距離が命中範囲内なら範囲ダメージを与えて True を返す。"""
         if self._consumed:
             return False
         if self._target.is_dead():
@@ -92,6 +94,7 @@ class AreaBullet(Bullet):
         return True
 
     def draw(self, screen: pg.Surface) -> None:
+        """範囲弾を通常弾より少し大きい爆発色の円で描画する。"""
         x, y = int(self._pos[0]), int(self._pos[1])
         pg.draw.circle(screen, COLOR_EFFECT_EXPLOSION, (x, y), self.DEFAULT_RADIUS + 1)
 
@@ -108,24 +111,31 @@ class BaseWeapon:
         self._cooldown_left: float = 0.0
 
     def get_name(self) -> str:
+        """UI 表示や切り替え識別に使う武器名を返す。"""
         return self.name
 
     def get_damage(self) -> int:
+        """1 発あたりの基準ダメージを返す。"""
         return self.damage
 
     def get_range(self) -> float:
+        """ターゲット探索に使う射程距離を返す。"""
         return self.range_
 
     def get_cooldown(self) -> float:
+        """発射後に再発射可能になるまでの基準秒数を返す。"""
         return self.cooldown
 
     def get_cooldown_left(self) -> float:
+        """現在残っている発射クールタイム秒数を返す。"""
         return self._cooldown_left
 
     def is_ready(self) -> bool:
+        """残りクールタイムが 0 秒以下なら発射可能として True を返す。"""
         return self._cooldown_left <= 0
 
     def update(self, dt: float) -> None:
+        """1 フレーム分の状態を更新する。"""
         self._cooldown_left = max(0.0, self._cooldown_left - dt)
 
     def find_target(
@@ -196,6 +206,7 @@ class MeleeWeapon(BaseWeapon):
         size: int,
         highlight: bool = False,
     ) -> None:
+        """近接武器を橙色の四角アイコンで描画する。"""
         rect = pg.Rect(pos[0], pos[1], size, size)
         pg.draw.rect(screen, (220, 140, 80), rect)
         if highlight:
@@ -217,6 +228,7 @@ class RangedWeapon(BaseWeapon):
         size: int,
         highlight: bool = False,
     ) -> None:
+        """遠距離武器を緑色の四角アイコンで描画する。"""
         rect = pg.Rect(pos[0], pos[1], size, size)
         pg.draw.rect(screen, (130, 200, 120), rect)
         if highlight:
@@ -253,6 +265,7 @@ class AreaWeapon(BaseWeapon):
         size: int,
         highlight: bool = False,
     ) -> None:
+        """範囲武器を爆発色の四角アイコンで描画する。"""
         rect = pg.Rect(pos[0], pos[1], size, size)
         pg.draw.rect(screen, COLOR_EFFECT_EXPLOSION, rect)
         if highlight:

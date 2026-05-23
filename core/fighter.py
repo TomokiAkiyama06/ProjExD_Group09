@@ -69,25 +69,31 @@ class Fighter(BasePlayer):
     # ----- accessors -----
 
     def is_dashing(self) -> bool:
+        """Dashing かどうかを返す。"""
         return self._is_dashing
 
     def get_facing(self) -> tuple[float, float]:
+        """Facing を返す。"""
         return self._facing
 
     def get_current_weapon(self) -> BaseWeapon | None:
+        """Current_weapon を返す。"""
         if not self._weapons:
             return None
         return self._weapons[self._weapon_index % len(self._weapons)]
 
     def get_current_skill(self) -> BaseSkill | None:
+        """Current_skill を返す。"""
         if not self._skills:
             return None
         return self._skills[self._skill_index % len(self._skills)]
 
     def get_weapons(self) -> list[BaseWeapon]:
+        """Weapons を返す。"""
         return list(self._weapons)
 
     def get_skills(self) -> list[BaseSkill]:
+        """Skills を返す。"""
         return list(self._skills)
 
     def get_attack_cooldown_left(self) -> float:
@@ -101,18 +107,21 @@ class Fighter(BasePlayer):
         return skill.get_cooldown_left() if skill is not None else 0.0
 
     def is_invincible(self) -> bool:
+        """Invincible かどうかを返す。"""
         skill = self.get_current_skill()
         return bool(skill is not None and getattr(skill, "is_invincible", lambda: False)())
 
     # ----- mutators -----
 
     def cycle_weapon(self, delta: int = 1) -> None:
+        """Weapon を切り替える。"""
         if not self._weapons or self._weapon_switch_cooldown_left > 0:
             return
         self._weapon_index = (self._weapon_index + delta) % len(self._weapons)
         self._weapon_switch_cooldown_left = WEAPON_SWITCH_COOLDOWN
 
     def cycle_skill(self, delta: int = 1) -> None:
+        """Skill を切り替える。"""
         if not self._skills:
             return
         self._skill_index = (self._skill_index + delta) % len(self._skills)
@@ -221,6 +230,7 @@ class Fighter(BasePlayer):
     # ----- draw -----
 
     def draw(self, screen: pg.Surface) -> None:
+        """Surface に描画する。"""
         x, y = int(self._pos[0]), int(self._pos[1])
         pg.draw.circle(screen, COLOR_PLAYER, (x, y), self.DEFAULT_RADIUS)
         # 向き表示（短い線）

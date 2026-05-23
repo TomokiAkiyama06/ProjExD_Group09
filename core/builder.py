@@ -52,18 +52,23 @@ class Builder(BasePlayer):
     # ----- accessors -----
 
     def get_gold(self) -> int:
+        """Gold を返す。"""
         return self._gold
 
     def set_gold(self, value: int) -> None:
+        """Gold を設定する。"""
         self._gold = max(0, value)
 
     def get_selected_tower_type(self) -> str:
+        """Selected_tower_type を返す。"""
         return self._selected_tower_type
 
     def get_selected_tower(self) -> BaseTower | None:
+        """Selected_tower を返す。"""
         return self._selected_tower
 
     def get_tower_cost(self) -> int:
+        """Tower_cost を返す。"""
         return self._tower_cost
 
     # ----- input -----
@@ -128,6 +133,7 @@ class Builder(BasePlayer):
         _ = input_state
 
     def draw(self, screen: pg.Surface) -> None:
+        """Surface に描画する。"""
         x, y = int(self._pos[0]), int(self._pos[1])
         pg.draw.rect(
             screen,

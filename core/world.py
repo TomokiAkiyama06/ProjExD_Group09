@@ -82,9 +82,11 @@ class _NullEffects:
     """EffectSink を未注入時のフォールバック（全 no-op）。"""
 
     def update(self, dt: float) -> None:
+        """1 フレーム分の状態を更新する。"""
         _ = dt
 
     def draw(self, screen: pg.Surface) -> None:
+        """Surface に描画する。"""
         _ = screen
 
     def spawn_explosion(
@@ -93,6 +95,7 @@ class _NullEffects:
         count: int = EFFECT_EXPLOSION_PARTICLES,
         color: tuple[int, int, int] = COLOR_EFFECT_EXPLOSION,
     ) -> None:
+        """Explosion エフェクトをスポーンする。"""
         _ = pos, count, color
 
     def spawn_hit(
@@ -101,6 +104,7 @@ class _NullEffects:
         count: int = EFFECT_HIT_PARTICLES,
         color: tuple[int, int, int] = COLOR_EFFECT_HIT,
     ) -> None:
+        """Hit エフェクトをスポーンする。"""
         _ = pos, count, color
 
     def spawn_muzzle_flash(
@@ -109,6 +113,7 @@ class _NullEffects:
         direction: tuple[float, float],
         count: int = EFFECT_MUZZLE_PARTICLES,
     ) -> None:
+        """Muzzle_flash エフェクトをスポーンする。"""
         _ = pos, direction, count
 
     def spawn_shockwave(
@@ -118,6 +123,7 @@ class _NullEffects:
         color: tuple[int, int, int] = COLOR_EFFECT_SHOCKWAVE,
         duration: float = EFFECT_SHOCKWAVE_DURATION,
     ) -> None:
+        """Shockwave エフェクトをスポーンする。"""
         _ = pos, radius, color, duration
 
 
@@ -138,12 +144,15 @@ class _NullSound:
     """SoundSink を未注入時のフォールバック（全 no-op）。"""
 
     def play_se(self, name: str) -> None:
+        """Se を再生する。"""
         _ = name
 
     def play_bgm(self, name: str, loops: int = -1) -> None:
+        """Bgm を再生する。"""
         _ = name, loops
 
     def stop_bgm(self) -> None:
+        """Bgm を停止する。"""
         pass
 
 
@@ -179,44 +188,57 @@ class World:
     # ----- accessors -----
 
     def get_fortress(self) -> Fortress:
+        """Fortress を返す。"""
         return self._fortress
 
     def get_effects(self) -> EffectSink:
+        """Effects を返す。"""
         return self._effects
 
     def get_sound(self) -> SoundSink:
+        """Sound を返す。"""
         return self._sound
 
     def get_spawn_points(self) -> list[tuple[float, float]]:
+        """Spawn_points を返す。"""
         return list(self._spawn_points)
 
     def get_players(self) -> list[BasePlayer]:
+        """Players を返す。"""
         return self._players
 
     def get_enemies(self) -> list[BaseEnemy]:
+        """Enemies を返す。"""
         return self._enemies
 
     def get_towers(self) -> list[BaseTower]:
+        """Towers を返す。"""
         return self._towers
 
     def get_bullets(self) -> list[Bullet]:
+        """Bullets を返す。"""
         return self._bullets
 
     # ----- mutators -----
 
     def add_player(self, player: BasePlayer) -> None:
+        """Player を追加する。"""
         self._players.append(player)
 
     def add_enemy(self, enemy: BaseEnemy) -> None:
+        """Enemy を追加する。"""
         self._enemies.append(enemy)
 
     def add_tower(self, tower: BaseTower) -> None:
+        """Tower を追加する。"""
         self._towers.append(tower)
 
     def add_bullet(self, bullet: Bullet) -> None:
+        """Bullet を追加する。"""
         self._bullets.append(bullet)
 
     def add_bullets(self, bullets: list[Bullet]) -> None:
+        """Bullets を追加する。"""
         self._bullets.extend(bullets)
 
     # ----- queries -----
