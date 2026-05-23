@@ -234,6 +234,66 @@ def test_next_generation_keeps_population_size() -> None:
     assert len(generation) == 6
 
 
+def test_next_generation_preserves_top_elite_identity() -> None:
+    """エリート選択により、適応度最高の個体は次世代でも同一オブジェクトとして残る。"""
+    min_population_for_elite = 10
+    if EVOLUTION_ELITE_RATE > 0:
+        min_population_for_elite = max(
+            min_population_for_elite,
+            int(np.ceil(1.0 / EVOLUTION_ELITE_RATE)),
+        )
+    manager = EvolutionManager(population_size=min_population_for_elite)
+    top_index = len(manager.population) // 3
+    top_individual = manager.population[top_index]
+    fitness = [float(index + 1) for index in range(len(manager.population))]
+    # 最高適応度個体を一意にするため、他の全個体より大きい値を置く。
+    fitness[top_index] = max(fitness) + 1.0
+
+    elites = manager.select_elites(manager.population, fitness)
+    assert any(individual is top_individual for individual in elites)
+
+    new_population = manager.next_generation(fitness)
+    # エリート（少なくとも 1 個体）は次世代に「同じ参照」で含まれる
+    assert any(individual is top_individual for individual in new_population)
+
+
+def test_next_generation_invokes_crossover_for_non_elite_slots() -> None:
+    """エリート以外の枠は crossover を経由して生成される。"""
+    manager = EvolutionManager(population_size=5)
+    fitness = [1.0, 2.0, 3.0, 4.0, 5.0]
+    original_population = list(manager.population)
+    elite_count = len(manager.select_elites(original_population, fitness))
+    expected_child_count = manager.population_size - elite_count
+
+    crossover_calls: list[tuple[NeuralNet, NeuralNet]] = []
+    original_crossover = manager.crossover
+
+    def spy(parent_a: NeuralNet, parent_b: NeuralNet) -> NeuralNet:
+        crossover_calls.append((parent_a, parent_b))
+        return original_crossover(parent_a, parent_b)
+
+    manager.crossover = spy  # type: ignore[method-assign]
+    try:
+        manager.next_generation(fitness)
+    finally:
+        del manager.crossover  # type: ignore[attr-defined]
+
+    # エリート以外の各子個体を作るたびに crossover が 1 回呼ばれる。
+    assert len(crossover_calls) == expected_child_count
+    # 親 2 体は population から選ばれている
+    for parent_a, parent_b in crossover_calls:
+        assert any(parent_a is individual for individual in original_population)
+        assert any(parent_b is individual for individual in original_population)
+
+
+def test_next_generation_increments_generation_counter() -> None:
+    """next_generation 完了で世代番号が +1 される。"""
+    manager = EvolutionManager(population_size=3)
+    initial = manager.get_generation()
+    manager.next_generation([1.0, 2.0, 3.0])
+    assert manager.get_generation() == initial + 1
+
+
 def test_crossover_mixes_parent_weights() -> None:
     manager = EvolutionManager(population_size=1)
     parent_a = NeuralNet(input_size=2, hidden_size=2, output_size=2)
