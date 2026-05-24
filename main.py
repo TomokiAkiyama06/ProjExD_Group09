@@ -2,6 +2,11 @@
 
 Keep this file short. Real game behavior should live in core modules.
 """
+from __future__ import annotations
+
+import os
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 try:
     from .core.solo_game import SoloGame
