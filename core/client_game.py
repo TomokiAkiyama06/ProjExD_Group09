@@ -56,6 +56,7 @@ from .constants import (
 )
 from .game import Game
 
+from core.fonts import get_font
 
 class ClientGame(Game):
     """描画専用クライアント。"""
@@ -84,7 +85,7 @@ class ClientGame(Game):
         self._latest_seq: int = -1
         if not pg.font.get_init():
             pg.font.init()
-        self._font: pg.font.Font = pg.font.SysFont(None, CLIENT_FONT_SIZE)
+        self._font: pg.font.Font = get_font(CLIENT_FONT_SIZE)
 
     # ----- accessors -----
 
