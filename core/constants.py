@@ -176,6 +176,9 @@ SHIELDED_ENEMY_REWARD: int = 3
 SPECIAL_FAST_PROBABILITY: float = 0.2
 SPECIAL_SHIELDED_PROBABILITY: float = 0.1
 
+# ===== 難易度スケーリング（ゲーム拡張 / Epic #125） =====
+ENEMY_HP_GROWTH_PER_WAVE: float = 0.15  # ウェーブごとに通常敵 HP を +15%（wave1 は等倍）
+
 # エフェクト
 EFFECT_EXPLOSION_PARTICLES: int = 22
 EFFECT_HIT_PARTICLES: int = 8
