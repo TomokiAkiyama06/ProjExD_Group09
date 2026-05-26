@@ -11,7 +11,12 @@ from collections.abc import Callable
 from enum import Enum
 
 from .base_enemy import BaseEnemy
-from .constants import BOSS_WAVE_MODULO, SE_WAVE_END, SE_WAVE_START
+from .constants import (
+    BOSS_WAVE_MODULO,
+    ENEMY_HP_GROWTH_PER_WAVE,
+    SE_WAVE_END,
+    SE_WAVE_START,
+)
 from .world import World
 
 
@@ -100,6 +105,10 @@ class WaveManager:
             self._spawn_boss_pending = True
             self._remaining_to_spawn += 1
 
+    def _enemy_hp_factor(self) -> float:
+        """現在ウェーブに応じた通常敵 HP の倍率を返す（wave1 で 1.0）。"""
+        return 1.0 + ENEMY_HP_GROWTH_PER_WAVE * max(0, self._wave - 1)
+
     def _enter_summary(self) -> None:
         self._phase = WavePhase.SUMMARY
         self._phase_timer = self.SUMMARY_SECONDS
@@ -129,7 +138,10 @@ class WaveManager:
                         world.add_enemy(self._boss_factory(pos))
                         self._spawn_boss_pending = False
                     else:
-                        world.add_enemy(self._factory(pos))
+                        enemy = self._factory(pos)
+                        # ウェーブ進行に応じて HP をスケーリング（難易度上昇）
+                        enemy.scale_hp(self._enemy_hp_factor())
+                        world.add_enemy(enemy)
                     self._remaining_to_spawn -= 1
                     self._spawn_timer = self.SPAWN_INTERVAL
             if self._remaining_to_spawn == 0 and not world.get_enemies():
