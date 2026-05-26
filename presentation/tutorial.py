@@ -27,10 +27,11 @@ class TutorialOverlay:
 
     PANEL_WIDTH: int = 760
     PANEL_PADDING: int = 24
+    PANEL_MARGIN: int = 36
     TITLE_FONT_SIZE: int = 34
     SECTION_FONT_SIZE: int = 24
-    BODY_FONT_SIZE: int = 20
-    LINE_HEIGHT: int = 28
+    BODY_FONT_SIZE: int = 18
+    LINE_HEIGHT: int = 23
     CLOSE_BUTTON_SIZE: int = 34
 
     def __init__(self) -> None:
@@ -95,7 +96,7 @@ class TutorialOverlay:
 
     def _build_panel_rect(self) -> pg.Rect:
         """中央に配置する説明パネルの矩形を返す。"""
-        height = 500
+        height = min(620, SCREEN_HEIGHT - self.PANEL_MARGIN * 2)
         return pg.Rect(
             (SCREEN_WIDTH - self.PANEL_WIDTH) // 2,
             (SCREEN_HEIGHT - height) // 2,
@@ -109,7 +110,7 @@ class TutorialOverlay:
         y = panel_rect.y + self.PANEL_PADDING
         title = self._title_font.render("Controls", True, COLOR_TEXT)
         screen.blit(title, (x, y))
-        y += 52
+        y += 46
 
         sections = [
             (
@@ -143,12 +144,12 @@ class TutorialOverlay:
         for heading, lines in sections:
             heading_surface = self._section_font.render(heading, True, COLOR_TEXT)
             screen.blit(heading_surface, (x, y))
-            y += 30
+            y += 27
             for line in lines:
                 body_surface = self._body_font.render(line, True, COLOR_TEXT)
                 screen.blit(body_surface, (x + 18, y))
                 y += self.LINE_HEIGHT
-            y += 12
+            y += 8
 
         hint = self._body_font.render("Press any key or click to close.", True, COLOR_TEXT)
         hint_rect = hint.get_rect(
