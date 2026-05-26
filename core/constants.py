@@ -193,6 +193,12 @@ SPECIAL_ENEMY_HP_GROWTH_PER_WAVE: float = 0.1  # 特殊敵 HP をウェーブご
 BOSS_HP_GROWTH_PER_APPEARANCE: float = 0.3  # ボス出現回ごとに HP +30%
 BOSS_DAMAGE_GROWTH_PER_APPEARANCE: float = 0.15  # ボス出現回ごとに接触ダメージ +15%
 
+# ウェーブクリアボーナス（クリア時に資源と拠点HPを付与）。
+WAVE_CLEAR_GOLD_BONUS: int = 20  # 通常ウェーブクリアで得る資源
+WAVE_CLEAR_FORTRESS_HEAL: int = 30  # 通常ウェーブクリアで回復する拠点HP
+BOSS_WAVE_CLEAR_GOLD_BONUS: int = 40  # ボスウェーブクリア時の追加資源
+BOSS_WAVE_CLEAR_FORTRESS_HEAL: int = 60  # ボスウェーブクリア時の追加拠点HP
+
 # エフェクト
 EFFECT_EXPLOSION_PARTICLES: int = 22
 EFFECT_HIT_PARTICLES: int = 8
