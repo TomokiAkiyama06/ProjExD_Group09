@@ -125,6 +125,16 @@ class BaseEnemy:
         """現在 HP が 0 以下なら True を返す。"""
         return self._hp <= 0
 
+    def scale_hp(self, factor: float) -> None:
+        """最大 HP と現在 HP を factor 倍する（最低 1 を保証）。
+
+        ウェーブ進行に応じた難易度スケーリングで、スポーン直後の敵に適用する。
+        現在 HP は最大 HP に揃える（出現直後は全快のため）。
+        """
+        factor = max(0.0, float(factor))
+        self._max_hp = max(1, round(self._max_hp * factor))
+        self._hp = self._max_hp
+
     def update(self, fortress: Fortress, dt: float = 1.0 / 60.0) -> None:
         """拠点方向へ直進移動し、接触時にダメージを与える。"""
         # slow バフのタイマーを進める
