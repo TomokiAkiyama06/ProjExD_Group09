@@ -178,7 +178,7 @@ class SoloGame(Game):
             if event.type == pg.QUIT:
                 self._running = False
                 continue
-            if self._is_tutorial_visible():
+            if self.is_tutorial_visible():
                 self._tutorial_overlay.handle_event(event)
                 continue
             self._builder.handle_event(event, self._world)
@@ -186,7 +186,7 @@ class SoloGame(Game):
 
     def update(self, dt: float) -> None:
         """両プレイヤーの入力反映 → World 更新 → ウェーブ進行 → 世代切替。"""
-        if self._is_tutorial_visible():
+        if self.is_tutorial_visible():
             return
         keys = pg.key.get_pressed()
         self._fighter.update_keys(keys, dt, self._world)
@@ -240,7 +240,7 @@ class SoloGame(Game):
         if self._tutorial_overlay is not None:
             self._tutorial_overlay.draw(self._screen)
 
-    def _is_tutorial_visible(self) -> bool:
+    def is_tutorial_visible(self) -> bool:
         """操作説明オーバーレイが表示中なら True を返す。"""
         return self._tutorial_overlay is not None and self._tutorial_overlay.is_visible()
 

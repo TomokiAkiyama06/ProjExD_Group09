@@ -4,35 +4,39 @@ from __future__ import annotations
 
 import pygame as pg
 
-try:
-    from ..core.constants import (
-        COLOR_TEXT,
-        HUD_PANEL_BG,
-        HUD_PANEL_BORDER,
-        SCREEN_HEIGHT,
-        SCREEN_WIDTH,
-    )
-except ImportError:
-    from core.constants import (
-        COLOR_TEXT,
-        HUD_PANEL_BG,
-        HUD_PANEL_BORDER,
-        SCREEN_HEIGHT,
-        SCREEN_WIDTH,
-    )
+from core.constants import (
+    COLOR_TEXT,
+    HUD_PANEL_BG,
+    HUD_PANEL_BORDER,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    TUTORIAL_BACKDROP_ALPHA,
+    TUTORIAL_BODY_FONT_SIZE,
+    TUTORIAL_CLOSE_BUTTON_SIZE,
+    TUTORIAL_LINE_HEIGHT,
+    TUTORIAL_PANEL_MARGIN,
+    TUTORIAL_PANEL_MAX_HEIGHT,
+    TUTORIAL_PANEL_PADDING,
+    TUTORIAL_PANEL_WIDTH,
+    TUTORIAL_SECTION_BOTTOM_GAP,
+    TUTORIAL_SECTION_FONT_SIZE,
+    TUTORIAL_SECTION_TITLE_GAP,
+    TUTORIAL_TITLE_FONT_SIZE,
+    TUTORIAL_TITLE_TO_BODY_GAP,
+)
 
 
 class TutorialOverlay:
     """操作説明をゲーム画面に重ねて描画するオーバーレイ。"""
 
-    PANEL_WIDTH: int = 760
-    PANEL_PADDING: int = 24
-    PANEL_MARGIN: int = 36
-    TITLE_FONT_SIZE: int = 34
-    SECTION_FONT_SIZE: int = 24
-    BODY_FONT_SIZE: int = 18
-    LINE_HEIGHT: int = 23
-    CLOSE_BUTTON_SIZE: int = 34
+    PANEL_WIDTH: int = TUTORIAL_PANEL_WIDTH
+    PANEL_PADDING: int = TUTORIAL_PANEL_PADDING
+    PANEL_MARGIN: int = TUTORIAL_PANEL_MARGIN
+    TITLE_FONT_SIZE: int = TUTORIAL_TITLE_FONT_SIZE
+    SECTION_FONT_SIZE: int = TUTORIAL_SECTION_FONT_SIZE
+    BODY_FONT_SIZE: int = TUTORIAL_BODY_FONT_SIZE
+    LINE_HEIGHT: int = TUTORIAL_LINE_HEIGHT
+    CLOSE_BUTTON_SIZE: int = TUTORIAL_CLOSE_BUTTON_SIZE
 
     def __init__(self) -> None:
         if not pg.font.get_init():
@@ -91,12 +95,12 @@ class TutorialOverlay:
     def _draw_backdrop(self, screen: pg.Surface) -> None:
         """ゲーム画面を暗くする半透明背景を描画する。"""
         overlay = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pg.SRCALPHA)
-        overlay.fill((0, 0, 0, 150))
+        overlay.fill((0, 0, 0, TUTORIAL_BACKDROP_ALPHA))
         screen.blit(overlay, (0, 0))
 
     def _build_panel_rect(self) -> pg.Rect:
         """中央に配置する説明パネルの矩形を返す。"""
-        height = min(620, SCREEN_HEIGHT - self.PANEL_MARGIN * 2)
+        height = min(TUTORIAL_PANEL_MAX_HEIGHT, SCREEN_HEIGHT - self.PANEL_MARGIN * 2)
         return pg.Rect(
             (SCREEN_WIDTH - self.PANEL_WIDTH) // 2,
             (SCREEN_HEIGHT - height) // 2,
@@ -110,7 +114,7 @@ class TutorialOverlay:
         y = panel_rect.y + self.PANEL_PADDING
         title = self._title_font.render("Controls", True, COLOR_TEXT)
         screen.blit(title, (x, y))
-        y += 46
+        y += TUTORIAL_TITLE_TO_BODY_GAP
 
         sections = [
             (
@@ -144,12 +148,12 @@ class TutorialOverlay:
         for heading, lines in sections:
             heading_surface = self._section_font.render(heading, True, COLOR_TEXT)
             screen.blit(heading_surface, (x, y))
-            y += 27
+            y += TUTORIAL_SECTION_TITLE_GAP
             for line in lines:
                 body_surface = self._body_font.render(line, True, COLOR_TEXT)
                 screen.blit(body_surface, (x + 18, y))
                 y += self.LINE_HEIGHT
-            y += 8
+            y += TUTORIAL_SECTION_BOTTOM_GAP
 
         hint = self._body_font.render("Press any key or click to close.", True, COLOR_TEXT)
         hint_rect = hint.get_rect(

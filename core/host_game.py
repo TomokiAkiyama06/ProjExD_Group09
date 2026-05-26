@@ -102,6 +102,9 @@ class HostGame(SoloGame):
 
     def update(self, dt: float) -> None:
         """SoloGame の状態更新に加えて、ACK/heartbeat と state broadcast を進める。"""
+        if self.is_tutorial_visible():
+            self._server.update()
+            return
         self._apply_latest_remote_input(dt)
         super().update(dt)
         self._server.update()
