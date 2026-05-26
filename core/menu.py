@@ -4,6 +4,9 @@
 `run()` は選択結果の文字列（"solo" / "host" / "client" / "versus" / "quit"）を返す。
 実際のゲーム起動は呼び出し側（main.py）が行う。
 
+単体での動作確認はリポジトリルートで `python -m core.menu` を使う。
+（`python core/menu.py` は相対 import が解決できず ImportError になるため不可。）
+
 フォントは HUD と同じ `pg.font.SysFont(None, ...)` 方式。日本語フォント未配置だと
 文字化けし得る（Issue #111）ため、選択肢ラベルは ASCII にしている。
 """
@@ -150,6 +153,8 @@ class MenuScene:
 
 
 if __name__ == "__main__":
+    # 単体起動はリポジトリルートで `python -m core.menu`（直接 `python core/menu.py`
+    # は相対 import が解決できないため不可）。
     pg.init()
     selected = MenuScene().run()
     pg.quit()
