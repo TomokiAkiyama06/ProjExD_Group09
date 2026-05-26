@@ -4,8 +4,8 @@
 マウス位置にゴーストプレビューを描画し、`World.can_place_tower` の結果で
 色（白系 / 赤）を切り替える。
 """
-
 from __future__ import annotations
+from core.fonts import get_font
 
 from typing import ClassVar
 
@@ -50,7 +50,7 @@ class TowerSelectorUI:
     def __init__(self) -> None:
         if not pg.font.get_init():
             pg.font.init()
-        self._font: pg.font.Font = pg.font.SysFont(None, 18)
+        self._font: pg.font.Font = get_font(18)
 
     def draw(
         self,
