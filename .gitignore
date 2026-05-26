@@ -199,6 +199,9 @@ cython_debug/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
 
+# Local report generation helper
+scripts/make_kadai6_pdf.py
+
 # Ruff stuff:
 .ruff_cache/
 
