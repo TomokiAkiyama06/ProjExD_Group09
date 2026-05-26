@@ -14,7 +14,17 @@ import pygame as pg
 from .base_enemy import BaseEnemy
 from .base_hud import BaseHud
 from .builder import Builder, TowerFactory
-from .constants import BGM_MAIN, EVOLUTION_GRAPH_DEFAULT_ORIGIN, SCREEN_HEIGHT, SCREEN_WIDTH
+from .constants import (
+    BGM_MAIN,
+    BOSS_WAVE_CLEAR_FORTRESS_HEAL,
+    BOSS_WAVE_CLEAR_GOLD_BONUS,
+    BOSS_WAVE_MODULO,
+    EVOLUTION_GRAPH_DEFAULT_ORIGIN,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    WAVE_CLEAR_FORTRESS_HEAL,
+    WAVE_CLEAR_GOLD_BONUS,
+)
 from .fighter import Fighter
 from .game import Game
 from .wave_manager import EnemyFactory, WaveManager, WavePhase
@@ -175,7 +185,7 @@ class SoloGame(Game):
         # 進化AIの戦績観測（死亡/到達した個体の終了時刻を確定）と世代切替
         if self._evolution_driver is not None:
             self._evolution_driver.observe_frame()
-        self._tick_evolution()
+        self._tick_wave_transition()
 
     def draw(self) -> None:
         """World 描画 ＋ HUD オーバーレイ ＋ 各種 UI。"""
@@ -229,14 +239,31 @@ class SoloGame(Game):
         live_ids = {id(e) for e in enemies if not e.is_dead()}
         self._known_enemies &= live_ids
 
-    def _tick_evolution(self) -> None:
-        """WaveManager の BATTLE → SUMMARY 遷移を検知して進化を進める。"""
+    def _tick_wave_transition(self) -> None:
+        """BATTLE→SUMMARY 遷移（ウェーブクリア）を検知し、世代切替とボーナスを処理する。"""
         current_phase = self._wave_manager.get_phase()
-        if (
-            self._evolution_driver is not None
-            and self._prev_wave_phase is WavePhase.BATTLE
-            and current_phase is WavePhase.SUMMARY
-        ):
-            self._evolution_driver.finalize_wave()
-            self._generation = self._evolution_driver.get_generation()
+        wave_cleared = (
+            self._prev_wave_phase is WavePhase.BATTLE and current_phase is WavePhase.SUMMARY
+        )
+        if wave_cleared:
+            if self._evolution_driver is not None:
+                self._evolution_driver.finalize_wave()
+                self._generation = self._evolution_driver.get_generation()
+            self._award_wave_clear_bonus()
         self._prev_wave_phase = current_phase
+
+    def _award_wave_clear_bonus(self) -> None:
+        """ウェーブクリア時に資源と拠点 HP の回復を付与する。
+
+        ボスウェーブ（BOSS_WAVE_MODULO の倍数）クリア時は追加ボーナスを与える。
+        拠点 HP は Fortress.set_hp 側で最大値にクランプされる。
+        """
+        wave = self._wave_manager.get_wave()
+        gold_bonus = WAVE_CLEAR_GOLD_BONUS
+        heal = WAVE_CLEAR_FORTRESS_HEAL
+        if wave > 0 and wave % BOSS_WAVE_MODULO == 0:
+            gold_bonus += BOSS_WAVE_CLEAR_GOLD_BONUS
+            heal += BOSS_WAVE_CLEAR_FORTRESS_HEAL
+        self._builder.set_gold(self._builder.get_gold() + gold_bonus)
+        fortress = self._world.get_fortress()
+        fortress.set_hp(fortress.get_hp() + heal)
