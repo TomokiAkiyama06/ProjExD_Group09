@@ -15,6 +15,8 @@ from dataclasses import dataclass
 import pygame as pg
 
 try:
+    from core.fonts import get_font
+
     from ..core.base_enemy import BaseEnemy
     from ..core.constants import (
         COLOR_BG,
@@ -33,8 +35,6 @@ try:
     from ..core.fortress import Fortress
     from ..core.wave_manager import EnemyFactory, WaveManager
     from ..core.world import SoundSink, World
-
-    from core.fonts import get_font
 
 except ImportError:
     from core.base_enemy import BaseEnemy

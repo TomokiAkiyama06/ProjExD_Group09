@@ -14,10 +14,7 @@ from typing import Any
 
 import pygame as pg
 
-
 from core.fonts import get_font
-
-
 from network.net_client import NetClient
 from network.state_buffer import StateBuffer
 

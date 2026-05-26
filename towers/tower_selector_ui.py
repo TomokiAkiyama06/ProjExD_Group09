@@ -11,8 +11,6 @@ from typing import ClassVar
 
 import pygame as pg
 
-from core.fonts import get_font
-
 from core.builder import Builder
 from core.constants import (
     COLOR_FIRE,
@@ -23,6 +21,7 @@ from core.constants import (
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
 )
+from core.fonts import get_font
 from core.world import World
 
 

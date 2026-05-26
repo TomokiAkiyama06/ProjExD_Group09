@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import pygame as pg
 
-
 from core.fonts import get_font
 
 from .constants import (
