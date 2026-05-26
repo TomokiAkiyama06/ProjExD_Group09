@@ -24,7 +24,7 @@ def _build_solo_kwargs() -> dict:
         EffectManager,
         WeaponSelectorUI,
     )
-    from core.constants import BOSS_WAVE_MODULO
+    from core.constants import SOLO_MAX_WAVE
     from evolution import EvolutionDriver, EvolutionManager
     from presentation import EvolutionGraph
     from presentation.sound_manager import SoundManager
@@ -60,7 +60,7 @@ def _build_solo_kwargs() -> dict:
         "weapon_selector": WeaponSelectorUI(),
         # enemy_factory は EvolutionDriver.spawn_enemy が SoloGame 側で自動的に使われる
         "boss_factory": BossEnemy,
-        "max_wave": BOSS_WAVE_MODULO,
+        "max_wave": SOLO_MAX_WAVE,
         "evolution_driver": evolution_driver,
         "evolution_graph": evolution_graph,
     }
