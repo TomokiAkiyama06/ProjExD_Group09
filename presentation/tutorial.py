@@ -31,6 +31,7 @@ class TutorialOverlay:
     SECTION_FONT_SIZE: int = 24
     BODY_FONT_SIZE: int = 20
     LINE_HEIGHT: int = 28
+    CLOSE_BUTTON_SIZE: int = 34
 
     def __init__(self) -> None:
         if not pg.font.get_init():
@@ -39,10 +40,31 @@ class TutorialOverlay:
         self._section_font: pg.font.Font = pg.font.SysFont(None, self.SECTION_FONT_SIZE)
         self._body_font: pg.font.Font = pg.font.SysFont(None, self.BODY_FONT_SIZE)
         self._visible: bool = True
+        self._close_rect: pg.Rect = pg.Rect(0, 0, self.CLOSE_BUTTON_SIZE, self.CLOSE_BUTTON_SIZE)
 
     def is_visible(self) -> bool:
         """表示中なら True を返す。"""
         return self._visible
+
+    def show(self) -> None:
+        """オーバーレイを表示する。"""
+        self._visible = True
+
+    def hide(self) -> None:
+        """オーバーレイを非表示にする。"""
+        self._visible = False
+
+    def handle_event(self, event: pg.event.Event) -> bool:
+        """閉じる操作を処理し、閉じた場合は True を返す。"""
+        if not self._visible:
+            return False
+        if event.type == pg.KEYDOWN:
+            self.hide()
+            return True
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            self.hide()
+            return True
+        return False
 
     def draw(self, screen: pg.Surface) -> None:
         """半透明背景と操作説明を描画する。"""
@@ -50,9 +72,16 @@ class TutorialOverlay:
             return
         self._draw_backdrop(screen)
         panel_rect = self._build_panel_rect()
+        self._close_rect = pg.Rect(
+            panel_rect.right - self.PANEL_PADDING - self.CLOSE_BUTTON_SIZE,
+            panel_rect.y + self.PANEL_PADDING,
+            self.CLOSE_BUTTON_SIZE,
+            self.CLOSE_BUTTON_SIZE,
+        )
         pg.draw.rect(screen, HUD_PANEL_BG, panel_rect, border_radius=8)
         pg.draw.rect(screen, HUD_PANEL_BORDER, panel_rect, width=2, border_radius=8)
         self._draw_contents(screen, panel_rect)
+        self._draw_close_button(screen)
 
     def _draw_backdrop(self, screen: pg.Surface) -> None:
         """ゲーム画面を暗くする半透明背景を描画する。"""
@@ -116,3 +145,9 @@ class TutorialOverlay:
                 screen.blit(body_surface, (x + 18, y))
                 y += self.LINE_HEIGHT
             y += 12
+
+    def _draw_close_button(self, screen: pg.Surface) -> None:
+        """閉じるボタンを描画する。"""
+        pg.draw.rect(screen, HUD_PANEL_BORDER, self._close_rect, border_radius=4)
+        label = self._body_font.render("X", True, COLOR_TEXT)
+        screen.blit(label, label.get_rect(center=self._close_rect.center))
