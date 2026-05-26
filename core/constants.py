@@ -182,6 +182,17 @@ SPECIAL_SHIELDED_PROBABILITY: float = 0.1
 # 進化AI の fitness 比較の公平性（選択バイアス防止）を保つ。
 ENEMY_HP_GROWTH_PER_GENERATION: float = 0.15  # 世代ごとに敵 HP を +15%（世代1 は等倍）
 
+# 特殊敵（FastEnemy / ShieldedEnemy）のウェーブスケーリング。
+# 特殊敵は進化AIの fitness 対象外なのでウェーブ基準でよい（バイアスを生まない）。
+SPECIAL_ENEMY_BASE_PROBABILITY: float = 0.1  # wave1 の特殊敵出現率
+SPECIAL_ENEMY_PROBABILITY_GROWTH_PER_WAVE: float = 0.04  # ウェーブごとに出現率 +0.04
+SPECIAL_ENEMY_PROBABILITY_MAX: float = 0.5  # 出現率の上限
+SPECIAL_ENEMY_HP_GROWTH_PER_WAVE: float = 0.1  # 特殊敵 HP をウェーブごと +10%
+
+# ボスのウェーブスケーリング（出現回ごと。ボスは fitness 対象外）。
+BOSS_HP_GROWTH_PER_APPEARANCE: float = 0.3  # ボス出現回ごとに HP +30%
+BOSS_DAMAGE_GROWTH_PER_APPEARANCE: float = 0.15  # ボス出現回ごとに接触ダメージ +15%
+
 # エフェクト
 EFFECT_EXPLOSION_PARTICLES: int = 22
 EFFECT_HIT_PARTICLES: int = 8
