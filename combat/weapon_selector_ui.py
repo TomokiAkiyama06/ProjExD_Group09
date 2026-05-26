@@ -3,8 +3,8 @@
 前線役プレイヤー近辺に現在装備中の武器アイコンと残クールタイムを表示する。
 Q/E キーによる切替は `Fighter` 側でハンドリング。
 """
-
 from __future__ import annotations
+from core.fonts import get_font
 
 import pygame as pg
 
@@ -27,7 +27,7 @@ class WeaponSelectorUI:
     def __init__(self) -> None:
         if not pg.font.get_init():
             pg.font.init()
-        self._font: pg.font.Font = pg.font.SysFont(None, 16)
+        self._font: pg.font.Font = get_font(16)
 
     def draw(
         self,
