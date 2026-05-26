@@ -6,8 +6,9 @@ matplotlib は重いので pygame の draw.line のみで実装。
 ゲームループから `add(gen, best, avg)` を世代終了ごとに呼び、`draw(screen, rect)`
 で任意位置に描画する。データは直近 `GRAPH_MAX_GENERATIONS` 世代分のみ保持。
 """
-
 from __future__ import annotations
+from core.fonts import get_font
+
 
 from dataclasses import dataclass
 
@@ -61,7 +62,7 @@ class EvolutionGraph:
         self._height: int = max(20, int(height))
         if not pg.font.get_init():
             pg.font.init()
-        self._font: pg.font.Font = pg.font.SysFont(None, 14)
+        self._font: pg.font.Font = get_font(14)
 
     # ----- accessors -----
 
