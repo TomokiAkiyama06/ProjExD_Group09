@@ -161,6 +161,7 @@ BOSS_SPECIAL_INTERVAL: float = 5.0  # 特殊行動（AOE）の発動間隔（秒
 BOSS_SPECIAL_DAMAGE: int = 12
 BOSS_SPECIAL_RADIUS: float = 80.0
 BOSS_WAVE_MODULO: int = 5  # 5の倍数ウェーブでボス出現
+SOLO_MAX_WAVE: int = 15  # solo / host の最大ウェーブ数（BOSS_WAVE_MODULO の倍数を推奨）
 
 # 特殊敵
 FAST_ENEMY_HP: int = 12
