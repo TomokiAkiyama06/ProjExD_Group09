@@ -17,7 +17,13 @@ from combat.fighter_skills import (
     BaseSkill,
     DashAttackSkill,
 )
-from combat.special_enemy import FastEnemy, ShieldedEnemy, SpecialEnemy, create_combat_enemy
+from combat.special_enemy import (
+    FastEnemy,
+    ShieldedEnemy,
+    SpecialEnemy,
+    create_combat_enemy,
+    create_special_enemy,
+)
 from combat.weapons import (
     WEAPON_CYCLE,
     AreaBullet,
@@ -26,7 +32,13 @@ from combat.weapons import (
     RangedWeapon,
 )
 from core.base_enemy import BaseEnemy
-from core.constants import BOSS_WAVE_MODULO
+from core.constants import (
+    BOSS_DAMAGE_GROWTH_PER_APPEARANCE,
+    BOSS_HP_GROWTH_PER_APPEARANCE,
+    BOSS_WAVE_MODULO,
+    SPECIAL_ENEMY_BASE_PROBABILITY,
+    SPECIAL_ENEMY_PROBABILITY_MAX,
+)
 from core.fighter import Fighter
 from core.fortress import Fortress
 from core.wave_manager import WaveManager
@@ -298,6 +310,35 @@ def test_create_combat_enemy_uses_probability_roll() -> None:
     assert not isinstance(base, (FastEnemy, ShieldedEnemy))
 
 
+def test_create_special_enemy_returns_only_special() -> None:
+    assert isinstance(create_special_enemy((0.0, 0.0), roll=0.0), FastEnemy)
+    assert isinstance(create_special_enemy((0.0, 0.0), roll=0.99), ShieldedEnemy)
+    # 通常敵（非特殊）は決して返さない
+    for roll in (0.0, 0.3, 0.6, 0.99):
+        enemy = create_special_enemy((0.0, 0.0), roll=roll)
+        assert isinstance(enemy, (FastEnemy, ShieldedEnemy))
+
+
+def test_wave_manager_special_probability_increases_and_caps() -> None:
+    manager = WaveManager(special_factory=create_special_enemy)
+    manager._wave = 1
+    assert manager._special_spawn_probability() == SPECIAL_ENEMY_BASE_PROBABILITY
+    manager._wave = 5
+    assert manager._special_spawn_probability() > SPECIAL_ENEMY_BASE_PROBABILITY
+    manager._wave = 999
+    assert manager._special_spawn_probability() == SPECIAL_ENEMY_PROBABILITY_MAX
+
+
+def test_wave_manager_boss_scaling_increases_per_appearance() -> None:
+    manager = WaveManager(boss_factory=BossEnemy)
+    manager._wave = BOSS_WAVE_MODULO  # 1 回目のボス出現
+    assert manager._boss_hp_factor() == 1.0
+    assert manager._boss_damage_factor() == 1.0
+    manager._wave = BOSS_WAVE_MODULO * 2  # 2 回目のボス出現
+    assert manager._boss_hp_factor() == 1.0 + BOSS_HP_GROWTH_PER_APPEARANCE
+    assert manager._boss_damage_factor() == 1.0 + BOSS_DAMAGE_GROWTH_PER_APPEARANCE
+
+
 # ===== integration smoke =====
 
 
@@ -368,6 +409,9 @@ if __name__ == "__main__":
     test_shielded_enemy_takes_damage_after_shield_broken()
     test_special_enemy_preserves_legacy_constructor_signature()
     test_create_combat_enemy_uses_probability_roll()
+    test_create_special_enemy_returns_only_special()
+    test_wave_manager_special_probability_increases_and_caps()
+    test_wave_manager_boss_scaling_increases_per_appearance()
     test_fighter_with_weapons_and_skills()
     test_create_solo_game_supplies_combat_defaults()
     test_wave_manager_default_stays_at_three_without_solo_bootstrap()

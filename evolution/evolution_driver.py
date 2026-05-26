@@ -22,6 +22,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Protocol
 
+from core.constants import ENEMY_HP_GROWTH_PER_GENERATION
+
 from .evolution_manager import EvolutionManager
 from .evolved_enemy import EvolvedEnemy
 from .neural_net import NeuralNet
@@ -112,6 +114,16 @@ class EvolutionDriver:
 
     # ----- spawn -----
 
+    def _hp_factor(self) -> float:
+        """現世代に応じた敵 HP 倍率を返す（世代1 で 1.0）。
+
+        同一世代内では一定値となるため、population を複数ウェーブにまたがって
+        round-robin 評価しても個体ごとに HP が変わらず、fitness 比較の公平性
+        （ウェーブ依存スケーリングによる選択バイアス）を回避できる。
+        """
+        generation = self.manager.get_generation()
+        return 1.0 + ENEMY_HP_GROWTH_PER_GENERATION * max(0, generation - 1)
+
     def spawn_enemy(self, pos: tuple[float, float]) -> EvolvedEnemy:
         """現世代の NN を 1 個体使って EvolvedEnemy を生成する。
 
@@ -135,6 +147,8 @@ class EvolutionDriver:
             brain=brain,
             generation=self.manager.get_generation(),
         )
+        # 世代単位の HP スケーリング（同一世代内は一定 → fitness 比較が公平）
+        enemy.scale_hp(self._hp_factor())
         initial_distance = math.hypot(
             self.fortress_pos[0] - pos[0],
             self.fortress_pos[1] - pos[1],

@@ -154,3 +154,16 @@ def create_combat_enemy(pos: tuple[float, float], roll: float | None = None) -> 
     if value < SPECIAL_FAST_PROBABILITY + SPECIAL_SHIELDED_PROBABILITY:
         return ShieldedEnemy(pos=pos)
     return BaseEnemy(pos=pos)
+
+
+def create_special_enemy(pos: tuple[float, float], roll: float | None = None) -> BaseEnemy:
+    """必ず特殊敵（FastEnemy / ShieldedEnemy）を 1 体生成する。
+
+    出現させるかどうかの判定は呼び出し側（WaveManager のウェーブ別確率）に任せ、
+    ここでは fast / shielded の内訳のみを相対確率で決める。
+    """
+    total = SPECIAL_FAST_PROBABILITY + SPECIAL_SHIELDED_PROBABILITY
+    value = random.random() if roll is None else roll
+    if total <= 0 or value < SPECIAL_FAST_PROBABILITY / total:
+        return FastEnemy(pos=pos)
+    return ShieldedEnemy(pos=pos)

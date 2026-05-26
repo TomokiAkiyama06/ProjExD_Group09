@@ -7,6 +7,8 @@ import numpy as np
 from core.base_tower import BaseTower
 from core.constants import (
     EARLY_GENERATION_THRESHOLD,
+    ENEMY_BASE_HP,
+    ENEMY_HP_GROWTH_PER_GENERATION,
     EVOLUTION_ELITE_RATE,
     EVOLUTION_MUTATION_RATE,
     EVOLUTION_TOURNAMENT_SIZE,
@@ -459,3 +461,27 @@ def test_evolution_driver_uses_locked_survival_time_for_dead_enemy() -> None:
 
     assert manager.captured_fitness is not None
     assert manager.captured_fitness[0] < manager.captured_fitness[1]
+
+
+def test_spawned_enemies_share_hp_within_generation() -> None:
+    """同一世代では全個体の最大HPが一致する（fitness 比較の公平性）。
+
+    HP スケーリングをウェーブ依存にすると round-robin 評価で個体ごとに HP が
+    変わり選択バイアスになるため、世代依存にして同一世代内は一定にしている。
+    """
+    manager = EvolutionManager(population_size=3)
+    driver = EvolutionDriver(manager=manager)
+    hps = [driver.spawn_enemy((100.0, 100.0)).get_max_hp() for _ in range(6)]
+    assert len(set(hps)) == 1, "同一世代の敵は同じ最大HPを持つはず"
+    assert hps[0] == ENEMY_BASE_HP, "世代1 は等倍（ENEMY_BASE_HP）であるべき"
+
+
+def test_enemy_hp_increases_with_generation() -> None:
+    """世代が進むと敵の最大HPが上がる（難易度スケーリング）。"""
+    manager = EvolutionManager(population_size=2)
+    driver = EvolutionDriver(manager=manager)
+    gen1_hp = driver.spawn_enemy((100.0, 100.0)).get_max_hp()
+    manager.next_generation([1.0, 2.0])  # 世代を 1 つ進める
+    gen2_hp = driver.spawn_enemy((100.0, 100.0)).get_max_hp()
+    assert gen2_hp > gen1_hp
+    assert gen2_hp == round(ENEMY_BASE_HP * (1.0 + ENEMY_HP_GROWTH_PER_GENERATION))

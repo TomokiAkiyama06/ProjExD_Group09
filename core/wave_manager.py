@@ -11,7 +11,17 @@ from collections.abc import Callable
 from enum import Enum
 
 from .base_enemy import BaseEnemy
-from .constants import BOSS_WAVE_MODULO, SE_WAVE_END, SE_WAVE_START
+from .constants import (
+    BOSS_DAMAGE_GROWTH_PER_APPEARANCE,
+    BOSS_HP_GROWTH_PER_APPEARANCE,
+    BOSS_WAVE_MODULO,
+    SE_WAVE_END,
+    SE_WAVE_START,
+    SPECIAL_ENEMY_BASE_PROBABILITY,
+    SPECIAL_ENEMY_HP_GROWTH_PER_WAVE,
+    SPECIAL_ENEMY_PROBABILITY_GROWTH_PER_WAVE,
+    SPECIAL_ENEMY_PROBABILITY_MAX,
+)
 from .world import World
 
 
@@ -43,6 +53,7 @@ class WaveManager:
         enemy_factory: EnemyFactory | None = None,
         max_wave: int = 3,
         boss_factory: EnemyFactory | None = None,
+        special_factory: EnemyFactory | None = None,
     ) -> None:
         self._wave: int = 0
         self._max_wave: int = max_wave
@@ -52,6 +63,8 @@ class WaveManager:
         self._remaining_to_spawn: int = 0
         self._factory: EnemyFactory = enemy_factory or _default_enemy_factory
         self._boss_factory: EnemyFactory | None = boss_factory
+        # 特殊敵（fast/shielded）の生成 factory。None なら特殊敵は出現しない。
+        self._special_factory: EnemyFactory | None = special_factory
         # 次のウェーブ開始時にボスを 1 体追加投入するフラグ
         self._spawn_boss_pending: bool = False
 
@@ -100,6 +113,29 @@ class WaveManager:
             self._spawn_boss_pending = True
             self._remaining_to_spawn += 1
 
+    def _special_spawn_probability(self) -> float:
+        """現ウェーブでの特殊敵出現率（上限つき、wave1 が基準値）。"""
+        prob = SPECIAL_ENEMY_BASE_PROBABILITY + SPECIAL_ENEMY_PROBABILITY_GROWTH_PER_WAVE * max(
+            0, self._wave - 1
+        )
+        return min(SPECIAL_ENEMY_PROBABILITY_MAX, prob)
+
+    def _special_hp_factor(self) -> float:
+        """特殊敵 HP のウェーブ倍率（wave1 で 1.0）。"""
+        return 1.0 + SPECIAL_ENEMY_HP_GROWTH_PER_WAVE * max(0, self._wave - 1)
+
+    def _boss_appearance(self) -> int:
+        """現ウェーブが何回目のボス出現か（wave5→1, wave10→2, ...）。"""
+        return self._wave // BOSS_WAVE_MODULO
+
+    def _boss_hp_factor(self) -> float:
+        """ボス HP の出現回ごとの倍率（初回で 1.0）。"""
+        return 1.0 + BOSS_HP_GROWTH_PER_APPEARANCE * max(0, self._boss_appearance() - 1)
+
+    def _boss_damage_factor(self) -> float:
+        """ボス接触ダメージの出現回ごとの倍率（初回で 1.0）。"""
+        return 1.0 + BOSS_DAMAGE_GROWTH_PER_APPEARANCE * max(0, self._boss_appearance() - 1)
+
     def _enter_summary(self) -> None:
         self._phase = WavePhase.SUMMARY
         self._phase_timer = self.SUMMARY_SECONDS
@@ -126,8 +162,20 @@ class WaveManager:
                 if self._spawn_timer <= 0.0:
                     pos = random.choice(spawn_points)
                     if self._spawn_boss_pending and self._boss_factory is not None:
-                        world.add_enemy(self._boss_factory(pos))
+                        boss = self._boss_factory(pos)
+                        # ボスは出現回ごとに HP・接触ダメージを強化（fitness 対象外）
+                        boss.scale_hp(self._boss_hp_factor())
+                        boss.scale_damage(self._boss_damage_factor())
+                        world.add_enemy(boss)
                         self._spawn_boss_pending = False
+                    elif (
+                        self._special_factory is not None
+                        and random.random() < self._special_spawn_probability()
+                    ):
+                        # 特殊敵は通常スポーン枠を置き換える形で、ウェーブ依存で出現
+                        special = self._special_factory(pos)
+                        special.scale_hp(self._special_hp_factor())
+                        world.add_enemy(special)
                     else:
                         world.add_enemy(self._factory(pos))
                     self._remaining_to_spawn -= 1
