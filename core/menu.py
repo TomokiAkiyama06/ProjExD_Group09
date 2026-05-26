@@ -153,11 +153,22 @@ class MenuScene:
 
 
 def is_valid_ipv4(text: str) -> bool:
-    """4 オクテット・各 0〜255 の IPv4 文字列なら True を返す。"""
+    """4 オクテット・各 0〜255 の IPv4 文字列なら True を返す。
+
+    先頭ゼロ付き（"010" 等）は socket 解決で 8 進数と解釈され得て曖昧なため拒否する
+    （"0" 単独は許容）。これにより `010.0.0.1` が誤って 8.0.0.1 に解決されるのを防ぐ。
+    """
     parts = text.split(".")
     if len(parts) != 4:
         return False
-    return all(part.isdigit() and 0 <= int(part) <= 255 for part in parts)
+    for part in parts:
+        if not part.isdigit():
+            return False
+        if len(part) > 1 and part[0] == "0":  # 先頭ゼロ禁止（"0" は可）
+            return False
+        if not (0 <= int(part) <= 255):
+            return False
+    return True
 
 
 class IpInputScene:
