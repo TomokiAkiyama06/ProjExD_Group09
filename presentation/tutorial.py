@@ -1,0 +1,171 @@
+"""Tutorial overlay drawing for first-time players."""
+
+from __future__ import annotations
+
+import pygame as pg
+
+from core.constants import (
+    COLOR_TEXT,
+    HUD_PANEL_BG,
+    HUD_PANEL_BORDER,
+    SCREEN_HEIGHT,
+    SCREEN_WIDTH,
+    TUTORIAL_BACKDROP_ALPHA,
+    TUTORIAL_BODY_FONT_SIZE,
+    TUTORIAL_CLOSE_BUTTON_SIZE,
+    TUTORIAL_LINE_HEIGHT,
+    TUTORIAL_PANEL_MARGIN,
+    TUTORIAL_PANEL_MAX_HEIGHT,
+    TUTORIAL_PANEL_PADDING,
+    TUTORIAL_PANEL_WIDTH,
+    TUTORIAL_SECTION_BOTTOM_GAP,
+    TUTORIAL_SECTION_FONT_SIZE,
+    TUTORIAL_SECTION_TITLE_GAP,
+    TUTORIAL_TITLE_FONT_SIZE,
+    TUTORIAL_TITLE_TO_BODY_GAP,
+)
+
+
+class TutorialOverlay:
+    """操作説明をゲーム画面に重ねて描画するオーバーレイ。"""
+
+    PANEL_WIDTH: int = TUTORIAL_PANEL_WIDTH
+    PANEL_PADDING: int = TUTORIAL_PANEL_PADDING
+    PANEL_MARGIN: int = TUTORIAL_PANEL_MARGIN
+    TITLE_FONT_SIZE: int = TUTORIAL_TITLE_FONT_SIZE
+    SECTION_FONT_SIZE: int = TUTORIAL_SECTION_FONT_SIZE
+    BODY_FONT_SIZE: int = TUTORIAL_BODY_FONT_SIZE
+    LINE_HEIGHT: int = TUTORIAL_LINE_HEIGHT
+    CLOSE_BUTTON_SIZE: int = TUTORIAL_CLOSE_BUTTON_SIZE
+
+    def __init__(self) -> None:
+        if not pg.font.get_init():
+            pg.font.init()
+        self._title_font: pg.font.Font = pg.font.SysFont(None, self.TITLE_FONT_SIZE)
+        self._section_font: pg.font.Font = pg.font.SysFont(None, self.SECTION_FONT_SIZE)
+        self._body_font: pg.font.Font = pg.font.SysFont(None, self.BODY_FONT_SIZE)
+        self._visible: bool = True
+        self._close_rect: pg.Rect = pg.Rect(0, 0, self.CLOSE_BUTTON_SIZE, self.CLOSE_BUTTON_SIZE)
+
+    def is_visible(self) -> bool:
+        """表示中なら True を返す。"""
+        return self._visible
+
+    def show(self) -> None:
+        """オーバーレイを表示する。"""
+        self._visible = True
+
+    def hide(self) -> None:
+        """オーバーレイを非表示にする。"""
+        self._visible = False
+
+    def handle_event(self, event: pg.event.Event) -> bool:
+        """閉じる操作を処理し、閉じた場合は True を返す。"""
+        if not self._visible:
+            return False
+        if event.type == pg.KEYDOWN:
+            self.hide()
+            return True
+        if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+            self.hide()
+            return True
+        return False
+
+    def get_close_rect(self) -> pg.Rect:
+        """閉じるボタンの矩形を返す。"""
+        return self._close_rect.copy()
+
+    def draw(self, screen: pg.Surface) -> None:
+        """半透明背景と操作説明を描画する。"""
+        if not self._visible:
+            return
+        self._draw_backdrop(screen)
+        panel_rect = self._build_panel_rect()
+        self._close_rect = pg.Rect(
+            panel_rect.right - self.PANEL_PADDING - self.CLOSE_BUTTON_SIZE,
+            panel_rect.y + self.PANEL_PADDING,
+            self.CLOSE_BUTTON_SIZE,
+            self.CLOSE_BUTTON_SIZE,
+        )
+        pg.draw.rect(screen, HUD_PANEL_BG, panel_rect, border_radius=8)
+        pg.draw.rect(screen, HUD_PANEL_BORDER, panel_rect, width=2, border_radius=8)
+        self._draw_contents(screen, panel_rect)
+        self._draw_close_button(screen)
+
+    def _draw_backdrop(self, screen: pg.Surface) -> None:
+        """ゲーム画面を暗くする半透明背景を描画する。"""
+        overlay = pg.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pg.SRCALPHA)
+        overlay.fill((0, 0, 0, TUTORIAL_BACKDROP_ALPHA))
+        screen.blit(overlay, (0, 0))
+
+    def _build_panel_rect(self) -> pg.Rect:
+        """中央に配置する説明パネルの矩形を返す。"""
+        height = min(TUTORIAL_PANEL_MAX_HEIGHT, SCREEN_HEIGHT - self.PANEL_MARGIN * 2)
+        return pg.Rect(
+            (SCREEN_WIDTH - self.PANEL_WIDTH) // 2,
+            (SCREEN_HEIGHT - height) // 2,
+            self.PANEL_WIDTH,
+            height,
+        )
+
+    def _draw_contents(self, screen: pg.Surface, panel_rect: pg.Rect) -> None:
+        """説明文をパネル内に描画する。"""
+        x = panel_rect.x + self.PANEL_PADDING
+        y = panel_rect.y + self.PANEL_PADDING
+        title = self._title_font.render("Controls", True, COLOR_TEXT)
+        screen.blit(title, (x, y))
+        y += TUTORIAL_TITLE_TO_BODY_GAP
+
+        sections = [
+            (
+                "Player 1 / Builder",
+                [
+                    "1-4: select tower type",
+                    "Left click: place tower",
+                    "Right click: select tower",
+                    "Space: request next wave",
+                ],
+            ),
+            (
+                "Player 2 / Fighter",
+                [
+                    "WASD: move",
+                    "Shift: dash",
+                    "J: attack",
+                    "K: use skill",
+                    "L: repair nearby tower",
+                ],
+            ),
+            (
+                "Weapons / Skills",
+                [
+                    "Q / E: switch weapon",
+                    "5 / 6: switch skill",
+                ],
+            ),
+        ]
+
+        for heading, lines in sections:
+            heading_surface = self._section_font.render(heading, True, COLOR_TEXT)
+            screen.blit(heading_surface, (x, y))
+            y += TUTORIAL_SECTION_TITLE_GAP
+            for line in lines:
+                body_surface = self._body_font.render(line, True, COLOR_TEXT)
+                screen.blit(body_surface, (x + 18, y))
+                y += self.LINE_HEIGHT
+            y += TUTORIAL_SECTION_BOTTOM_GAP
+
+        hint = self._body_font.render("Press any key or click to close.", True, COLOR_TEXT)
+        hint_rect = hint.get_rect(
+            bottomleft=(
+                panel_rect.x + self.PANEL_PADDING,
+                panel_rect.bottom - self.PANEL_PADDING,
+            )
+        )
+        screen.blit(hint, hint_rect)
+
+    def _draw_close_button(self, screen: pg.Surface) -> None:
+        """閉じるボタンを描画する。"""
+        pg.draw.rect(screen, HUD_PANEL_BORDER, self._close_rect, border_radius=4)
+        label = self._body_font.render("X", True, COLOR_TEXT)
+        screen.blit(label, label.get_rect(center=self._close_rect.center))

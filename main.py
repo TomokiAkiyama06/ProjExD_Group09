@@ -29,6 +29,7 @@ def _build_solo_kwargs() -> dict:
     from evolution import EvolutionDriver, EvolutionManager
     from presentation import EvolutionGraph
     from presentation.sound_manager import SoundManager
+    from presentation.tutorial import TutorialOverlay
     from towers import (
         FireTower,
         IceTower,
@@ -66,6 +67,7 @@ def _build_solo_kwargs() -> dict:
         "max_wave": SOLO_MAX_WAVE,
         "evolution_driver": evolution_driver,
         "evolution_graph": evolution_graph,
+        "tutorial_overlay": TutorialOverlay(),
     }
 
 
