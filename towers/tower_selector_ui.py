@@ -11,6 +11,8 @@ from typing import ClassVar
 
 import pygame as pg
 
+from core.fonts import get_font
+
 from core.builder import Builder
 from core.constants import (
     COLOR_FIRE,
@@ -50,7 +52,7 @@ class TowerSelectorUI:
     def __init__(self) -> None:
         if not pg.font.get_init():
             pg.font.init()
-        self._font: pg.font.Font = pg.font.SysFont(None, 18)
+        self._font: pg.font.Font = get_font(18)
 
     def draw(
         self,
