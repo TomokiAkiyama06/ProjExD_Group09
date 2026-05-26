@@ -124,8 +124,42 @@ def run_solo() -> None:
     game.run()
 
 
+def _run_from_menu(default_ip: str, port: int) -> None:
+    """起動メニューを表示し、選択されたモードでゲームを開始する。
+
+    引数なし起動時に呼ばれる。Quit で終了し、Client は IP 入力後に接続する。
+    IP 入力を取り消した場合はメニューに戻る。
+    """
+    import pygame as pg
+
+    from core.menu import IpInputScene, MenuScene
+
+    while True:
+        choice = MenuScene().run()
+        if choice == "quit":
+            pg.quit()
+            return
+        if choice == "client":
+            ip = IpInputScene(initial_ip=default_ip).run()
+            if ip is None:
+                continue  # 取消 → メニューへ戻る
+            run_client(ip, port=port)
+            return
+        if choice == "host":
+            run_host(port=port)
+        elif choice == "versus":
+            run_versus()
+        else:  # "solo"
+            run_solo()
+        return
+
+
 def main() -> None:
-    """エントリーポイント。argparse で起動モードを切替えて対応する run_* を呼ぶ。"""
+    """エントリーポイント。
+
+    起動モード引数があれば従来どおり該当モードを直接起動する。引数なしの場合は
+    起動メニュー（MenuScene）を表示し、選択結果に応じてゲームを開始する。
+    """
     parser = argparse.ArgumentParser(description="共進化の砦（仮）")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--host", action="store_true", help="ホストモード（プレイヤー1）")
@@ -140,10 +174,13 @@ def main() -> None:
         run_host(port=args.port)
     elif args.client:
         run_client(args.ip, port=args.port)
+    elif args.solo:
+        run_solo()
     elif args.versus:
         run_versus()
     else:
-        run_solo()
+        # 起動モード未指定なら起動メニューを表示する
+        _run_from_menu(default_ip=args.ip, port=args.port)
 
 
 if __name__ == "__main__":
