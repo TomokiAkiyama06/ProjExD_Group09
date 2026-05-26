@@ -66,6 +66,10 @@ class TutorialOverlay:
             return True
         return False
 
+    def get_close_rect(self) -> pg.Rect:
+        """閉じるボタンの矩形を返す。"""
+        return self._close_rect.copy()
+
     def draw(self, screen: pg.Surface) -> None:
         """半透明背景と操作説明を描画する。"""
         if not self._visible:
@@ -145,6 +149,15 @@ class TutorialOverlay:
                 screen.blit(body_surface, (x + 18, y))
                 y += self.LINE_HEIGHT
             y += 12
+
+        hint = self._body_font.render("Press any key or click to close.", True, COLOR_TEXT)
+        hint_rect = hint.get_rect(
+            bottomleft=(
+                panel_rect.x + self.PANEL_PADDING,
+                panel_rect.bottom - self.PANEL_PADDING,
+            )
+        )
+        screen.blit(hint, hint_rect)
 
     def _draw_close_button(self, screen: pg.Surface) -> None:
         """閉じるボタンを描画する。"""

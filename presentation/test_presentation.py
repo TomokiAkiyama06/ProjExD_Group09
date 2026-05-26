@@ -29,6 +29,7 @@ from core.world import World, _NullSound
 from presentation.evolution_graph import EvolutionGraph, GenerationRecord
 from presentation.extended_hud import ExtendedHud
 from presentation.sound_manager import SoundManager
+from presentation.tutorial import TutorialOverlay
 from presentation.versus_mode import VersusEvent, VersusGame
 
 
@@ -131,6 +132,50 @@ def test_extended_hud_with_optional_panels() -> None:
         "opponent_core_max_hp": 1000,
     }
     hud.draw(surface, state)
+
+
+# ===== TutorialOverlay =====
+
+
+def test_tutorial_overlay_visibility_controls() -> None:
+    overlay = TutorialOverlay()
+    assert overlay.is_visible()
+
+    overlay.hide()
+    assert not overlay.is_visible()
+
+    overlay.show()
+    assert overlay.is_visible()
+
+
+def test_tutorial_overlay_draws_without_crash() -> None:
+    pg.init()
+    surface = pg.Surface((960, 540))
+    overlay = TutorialOverlay()
+
+    overlay.draw(surface)
+
+    assert overlay.get_close_rect().width == overlay.CLOSE_BUTTON_SIZE
+
+
+def test_tutorial_overlay_closes_with_key() -> None:
+    overlay = TutorialOverlay()
+
+    handled = overlay.handle_event(pg.event.Event(pg.KEYDOWN, {"key": pg.K_ESCAPE}))
+
+    assert handled
+    assert not overlay.is_visible()
+
+
+def test_tutorial_overlay_closes_with_click() -> None:
+    overlay = TutorialOverlay()
+
+    handled = overlay.handle_event(
+        pg.event.Event(pg.MOUSEBUTTONDOWN, {"button": 1, "pos": (10, 10)})
+    )
+
+    assert handled
+    assert not overlay.is_visible()
 
 
 # ===== SoundManager =====
@@ -432,6 +477,10 @@ if __name__ == "__main__":
     test_evolution_graph_draws_without_crash()
     test_extended_hud_basic_draw()
     test_extended_hud_with_optional_panels()
+    test_tutorial_overlay_visibility_controls()
+    test_tutorial_overlay_draws_without_crash()
+    test_tutorial_overlay_closes_with_key()
+    test_tutorial_overlay_closes_with_click()
     test_sound_manager_safe_when_no_sources()
     test_sound_manager_auto_load_handles_missing_dir()
     test_sound_manager_default_init_invokes_auto_load()
