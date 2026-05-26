@@ -82,6 +82,7 @@ class SoloGame(Game):
         weapon_selector: WeaponSelector | None = None,
         enemy_factory: EnemyFactory | None = None,
         boss_factory: EnemyFactory | None = None,
+        special_factory: EnemyFactory | None = None,
         max_wave: int = 3,
         evolution_driver: EvolutionDriver | None = None,
         evolution_graph: EvolutionGraphSink | None = None,
@@ -110,6 +111,7 @@ class SoloGame(Game):
             enemy_factory=enemy_factory,
             max_wave=max_wave,
             boss_factory=boss_factory,
+            special_factory=special_factory,
         )
         self._hud: BaseHud = BaseHud()
         self._hud.set_max_hp(self._world.get_fortress().get_max_hp())
