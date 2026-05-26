@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from functools import cache
 import os
+from functools import cache
 from pathlib import Path
 
 import pygame as pg
