@@ -7,6 +7,7 @@
 
 import argparse
 import os
+import sys
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -121,7 +122,7 @@ def run_solo() -> None:
     game.run()
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     """エントリーポイント。argparse で起動モードを切替えて対応する run_* を呼ぶ。"""
     parser = argparse.ArgumentParser(description="共進化の砦（仮）")
     group = parser.add_mutually_exclusive_group()
@@ -131,7 +132,8 @@ def main() -> None:
     group.add_argument("--versus", action="store_true", help="対戦モード（同一PC内 2 フィールド）")
     parser.add_argument("--ip", default="127.0.0.1", help="--client 時の接続先ホストIP")
     parser.add_argument("--port", type=int, default=50000, help="UDP ポート番号")
-    args = parser.parse_args()
+    parsed_argv = sys.argv[1:] if argv is None else argv
+    args = parser.parse_args(parsed_argv)
 
     if args.host:
         run_host(port=args.port)
@@ -139,8 +141,22 @@ def main() -> None:
         run_client(args.ip, port=args.port)
     elif args.versus:
         run_versus()
-    else:
+    elif args.solo:
         run_solo()
+    else:
+        from core.menu import run_menu
+
+        selection = run_menu(default_ip=args.ip)
+        if selection is None:
+            return
+        if selection.mode == "host":
+            run_host(port=args.port)
+        elif selection.mode == "client":
+            run_client(selection.ip, port=args.port)
+        elif selection.mode == "versus":
+            run_versus()
+        else:
+            run_solo()
 
 
 if __name__ == "__main__":
