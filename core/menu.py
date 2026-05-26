@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import pygame as pg
 
-from .constants import COLOR_BG, COLOR_TEXT, FPS, SCREEN_HEIGHT, SCREEN_WIDTH
+from .constants import COLOR_BG, COLOR_TEXT, FPS, SCREEN_HEIGHT, SCREEN_WIDTH, SERVER_HOST
 
 # 選択肢: (戻り値, 表示ラベル)
 MENU_OPTIONS: list[tuple[str, str]] = [
@@ -152,10 +152,146 @@ class MenuScene:
             pg.display.flip()
 
 
+def is_valid_ipv4(text: str) -> bool:
+    """4 オクテット・各 0〜255 の IPv4 文字列なら True を返す。
+
+    先頭ゼロ付き（"010" 等）は socket 解決で 8 進数と解釈され得て曖昧なため拒否する
+    （"0" 単独は許容）。これにより `010.0.0.1` が誤って 8.0.0.1 に解決されるのを防ぐ。
+    """
+    parts = text.split(".")
+    if len(parts) != 4:
+        return False
+    for part in parts:
+        if not part.isdigit():
+            return False
+        if len(part) > 1 and part[0] == "0":  # 先頭ゼロ禁止（"0" は可）
+            return False
+        if not (0 <= int(part) <= 255):
+            return False
+    return True
+
+
+class IpInputScene:
+    """接続先ホスト IP を入力するシーン。
+
+    `run()` は確定した IP 文字列、または取消（Esc / QUIT）時に None を返す。
+    入力ロジック（`insert_char` / `backspace` / `try_confirm`）は display 非依存で
+    単体テストしやすい。
+    """
+
+    PROMPT: str = "Enter host IP"
+    HINT: str = "[0-9 .] input   [Backspace] delete   [Enter] connect   [Esc] back"
+    INPUT_FONT_SIZE: int = 40
+    LABEL_FONT_SIZE: int = 24
+    MAX_LENGTH: int = 15  # "255.255.255.255"
+    COLOR_ERROR: tuple[int, int, int] = (240, 110, 90)
+    COLOR_CARET: tuple[int, int, int] = (255, 220, 120)
+
+    def __init__(self, screen: pg.Surface | None = None, initial_ip: str = SERVER_HOST) -> None:
+        if not pg.font.get_init():
+            pg.font.init()
+        self._screen: pg.Surface | None = screen
+        self._clock: pg.time.Clock = pg.time.Clock()
+        self._text: str = initial_ip
+        self._error: str = ""
+        self._input_font: pg.font.Font = pg.font.SysFont(None, self.INPUT_FONT_SIZE)
+        self._label_font: pg.font.Font = pg.font.SysFont(None, self.LABEL_FONT_SIZE)
+
+    # ----- input logic（display 非依存） -----
+
+    def get_text(self) -> str:
+        """現在の入力文字列を返す。"""
+        return self._text
+
+    def get_error(self) -> str:
+        """直近の検証エラーメッセージ（なければ空文字）を返す。"""
+        return self._error
+
+    def insert_char(self, ch: str) -> None:
+        """数字または '.' を 1 文字末尾に追加する（文字種・長さを制限）。"""
+        if len(self._text) >= self.MAX_LENGTH:
+            return
+        if ch.isdigit() or ch == ".":
+            self._text += ch
+            self._error = ""
+
+    def backspace(self) -> None:
+        """末尾を 1 文字削除する。"""
+        self._text = self._text[:-1]
+        self._error = ""
+
+    def try_confirm(self) -> str | None:
+        """確定を試みる。妥当なら IP 文字列を返し、無効ならエラーを設定して None。"""
+        if is_valid_ipv4(self._text):
+            return self._text
+        self._error = "Invalid IP address (e.g. 192.168.1.10)"
+        return None
+
+    def handle_event(self, event: pg.event.Event) -> tuple[bool, str | None]:
+        """1 イベントを処理する。
+
+        Returns:
+            (done, ip): done=True で終了。ip が文字列なら確定、None なら取消。
+        """
+        if event.type == pg.QUIT:
+            return True, None
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_ESCAPE:
+                return True, None
+            if event.key in (pg.K_RETURN, pg.K_KP_ENTER):
+                ip = self.try_confirm()
+                return (ip is not None), ip
+            if event.key == pg.K_BACKSPACE:
+                self.backspace()
+            elif event.unicode:
+                self.insert_char(event.unicode)
+        return False, None
+
+    # ----- draw -----
+
+    def draw(self, screen: pg.Surface) -> None:
+        """プロンプト・入力欄・エラー・操作ヒントを描画する。"""
+        screen.fill(COLOR_BG)
+        center_x = SCREEN_WIDTH // 2
+
+        prompt = self._label_font.render(self.PROMPT, True, COLOR_TEXT)
+        screen.blit(prompt, prompt.get_rect(center=(center_x, SCREEN_HEIGHT // 2 - 60)))
+
+        caret = "_" if (pg.time.get_ticks() // 500) % 2 == 0 else " "
+        field = self._input_font.render(self._text + caret, True, self.COLOR_CARET)
+        screen.blit(field, field.get_rect(center=(center_x, SCREEN_HEIGHT // 2)))
+
+        if self._error:
+            err = self._label_font.render(self._error, True, self.COLOR_ERROR)
+            screen.blit(err, err.get_rect(center=(center_x, SCREEN_HEIGHT // 2 + 50)))
+
+        hint = self._label_font.render(self.HINT, True, COLOR_TEXT)
+        screen.blit(hint, hint.get_rect(center=(center_x, SCREEN_HEIGHT - 48)))
+
+    # ----- run loop -----
+
+    def run(self) -> str | None:
+        """IP 入力画面を表示し、確定した IP 文字列（取消時は None）を返す。"""
+        if self._screen is None:
+            self._screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        while True:
+            self._clock.tick(FPS)
+            for event in pg.event.get():
+                done, ip = self.handle_event(event)
+                if done:
+                    return ip
+            self.draw(self._screen)
+            pg.display.flip()
+
+
 if __name__ == "__main__":
     # 単体起動はリポジトリルートで `python -m core.menu`（直接 `python core/menu.py`
     # は相対 import が解決できないため不可）。
     pg.init()
     selected = MenuScene().run()
+    if selected == "client":
+        ip_result = IpInputScene().run()
+        print(f"selected: {selected}  ip: {ip_result}")
+    else:
+        print(f"selected: {selected}")
     pg.quit()
-    print(f"selected: {selected}")
