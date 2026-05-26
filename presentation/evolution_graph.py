@@ -39,6 +39,7 @@ except ImportError:
 
 from core.fonts import get_font
 
+
 @dataclass(frozen=True)
 class GenerationRecord:
     """1 世代分の適応度記録。"""

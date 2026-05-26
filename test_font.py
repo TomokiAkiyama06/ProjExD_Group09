@@ -17,10 +17,10 @@ text_surface = font.render("日本語テスト完了！ 漢字・機能・確認
 
 # 画面の表示ループ
 while True:
-    screen.fill((40, 40, 40)) # 背景を暗いグレーに
-    screen.blit(text_surface, (50, 80)) # 文字を描画
+    screen.fill((40, 40, 40))  # 背景を暗いグレーに
+    screen.blit(text_surface, (50, 80))  # 文字を描画
     pg.display.flip()
-    
+
     for event in pg.event.get():
         if event.type == pg.QUIT:
             pg.quit()
