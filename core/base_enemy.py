@@ -135,6 +135,14 @@ class BaseEnemy:
         self._max_hp = max(1, round(self._max_hp * factor))
         self._hp = self._max_hp
 
+    def scale_damage(self, factor: float) -> None:
+        """拠点到達時に与える接触ダメージを factor 倍する（最低 1 を保証）。
+
+        ボス等のウェーブスケーリングで、スポーン直後の敵に適用する。
+        """
+        factor = max(0.0, float(factor))
+        self._damage = max(1, round(self._damage * factor))
+
     def update(self, fortress: Fortress, dt: float = 1.0 / 60.0) -> None:
         """拠点方向へ直進移動し、接触時にダメージを与える。"""
         # slow バフのタイマーを進める

@@ -23,6 +23,7 @@ def _build_solo_kwargs() -> dict:
         BossEnemy,
         EffectManager,
         WeaponSelectorUI,
+        create_special_enemy,
     )
     from core.constants import SOLO_MAX_WAVE
     from evolution import EvolutionDriver, EvolutionManager
@@ -60,6 +61,8 @@ def _build_solo_kwargs() -> dict:
         "weapon_selector": WeaponSelectorUI(),
         # enemy_factory は EvolutionDriver.spawn_enemy が SoloGame 側で自動的に使われる
         "boss_factory": BossEnemy,
+        # 特殊敵（fast/shielded）はウェーブ依存の確率で通常枠を置き換えて出現
+        "special_factory": create_special_enemy,
         "max_wave": SOLO_MAX_WAVE,
         "evolution_driver": evolution_driver,
         "evolution_graph": evolution_graph,
