@@ -5,7 +5,7 @@ from pathlib import Path
 import pygame as pg
 
 FONT_DIR = Path(__file__).parent.parent / "assets" / "font"
-FONT_DEFAULT = FONT_DIR / "NotoSansJP-Regular.otf"
+FONT_DEFAULT = FONT_DIR / "NotoSansJP-Regular.ttf"
 
 @lru_cache(maxsize=None)
 def get_font(size: int, path: Path = FONT_DEFAULT) -> pg.font.Font:
