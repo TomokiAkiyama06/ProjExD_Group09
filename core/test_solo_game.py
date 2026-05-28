@@ -165,8 +165,8 @@ def test_tutorial_seen_saved_when_skip_checked() -> None:
     assert not overlay.is_visible()
 
 
-def test_tutorial_seen_not_saved_when_skip_unchecked() -> None:
-    """チェック欄 OFF で閉じても表示済みフラグ保存は呼ばれない。"""
+def test_tutorial_seen_false_saved_when_skip_unchecked() -> None:
+    """チェック欄 OFF で閉じると表示済みフラグ False が保存される。"""
     pg.init()
     pg.display.set_mode((400, 200))
     saved_values: list[bool] = []
@@ -180,7 +180,7 @@ def test_tutorial_seen_not_saved_when_skip_unchecked() -> None:
     pg.event.post(pg.event.Event(pg.KEYDOWN, {"key": pg.K_ESCAPE}))
     game.handle_events()
 
-    assert saved_values == []
+    assert saved_values == [False]
     assert not overlay.is_visible()
 
 
@@ -203,6 +203,6 @@ if __name__ == "__main__":
     test_wave_clear_heal_clamped_to_max_hp()
     test_tutorial_overlay_opens_with_pause_key()
     test_tutorial_seen_saved_when_skip_checked()
-    test_tutorial_seen_not_saved_when_skip_unchecked()
+    test_tutorial_seen_false_saved_when_skip_unchecked()
     test_tutorial_seen_saver_none_allows_legacy_overlay()
     print("All solo_game tests passed.")

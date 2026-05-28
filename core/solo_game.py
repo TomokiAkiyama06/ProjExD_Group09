@@ -273,11 +273,10 @@ class SoloGame(Game):
             show()
 
     def _save_tutorial_seen_if_requested(self, overlay: TutorialOverlayView) -> None:
-        """チェック欄が選ばれていればチュートリアル表示済みとして保存する。"""
+        """チェック欄の状態をチュートリアル表示済みフラグとして保存する。"""
         if self._tutorial_seen_saver is None:
             return
-        if overlay.get_skip_next_time():
-            self._tutorial_seen_saver(True)
+        self._tutorial_seen_saver(overlay.get_skip_next_time())
 
     def _update_bosses(self, dt: float) -> None:
         """BossEnemy の特殊行動と撃破演出を呼ぶ。

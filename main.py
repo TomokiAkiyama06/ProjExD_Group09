@@ -52,8 +52,10 @@ def _build_solo_kwargs() -> dict:
     )
     # SoundManager(auto_load=True) で assets/sound/ 内の SE を自動キャッシュする
     sound = SoundManager()
+    tutorial_seen = get_tutorial_seen()
     tutorial_overlay = TutorialOverlay()
-    if not _should_show_tutorial(get_tutorial_seen()):
+    tutorial_overlay.set_skip_next_time(tutorial_seen)
+    if not _should_show_tutorial(tutorial_seen):
         tutorial_overlay.hide()
     return {
         "tower_factories": {
@@ -144,6 +146,7 @@ def _run_tutorial_overlay() -> bool:
     import pygame as pg
 
     from core.constants import COLOR_BG, FPS, SCREEN_HEIGHT, SCREEN_WIDTH
+    from core.settings import get_tutorial_seen, set_tutorial_seen
     from presentation.tutorial import TutorialOverlay
 
     screen = pg.display.get_surface()
@@ -151,6 +154,7 @@ def _run_tutorial_overlay() -> bool:
         screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     clock = pg.time.Clock()
     overlay = TutorialOverlay()
+    overlay.set_skip_next_time(get_tutorial_seen())
     overlay.show()
 
     while overlay.is_visible():
@@ -163,6 +167,7 @@ def _run_tutorial_overlay() -> bool:
         screen.fill(COLOR_BG)
         overlay.draw(screen)
         pg.display.flip()
+    set_tutorial_seen(overlay.get_skip_next_time())
     return True
 
 
