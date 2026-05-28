@@ -177,4 +177,7 @@ if __name__ == "__main__":
     test_normal_wave_clear_awards_gold_and_heal()
     test_boss_wave_clear_awards_extra_bonus()
     test_wave_clear_heal_clamped_to_max_hp()
+    test_tutorial_seen_saved_when_skip_checked()
+    test_tutorial_seen_not_saved_when_skip_unchecked()
+    test_tutorial_seen_saver_none_allows_legacy_overlay()
     print("All solo_game tests passed.")
