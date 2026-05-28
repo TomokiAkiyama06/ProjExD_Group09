@@ -84,6 +84,9 @@ class TutorialOverlayView(Protocol):
     def handle_event(self, event: pg.event.Event) -> bool:
         """オーバーレイ用イベントを処理する。"""
 
+    def get_skip_next_time(self) -> bool:
+        """次回から自動表示しない設定が選ばれているかを返す。"""
+
     def draw(self, screen: pg.Surface) -> None:
         """オーバーレイを描画する。"""
 
@@ -111,6 +114,7 @@ class SoloGame(Game):
         evolution_graph: EvolutionGraphSink | None = None,
         evolution_graph_origin: tuple[int, int] = EVOLUTION_GRAPH_DEFAULT_ORIGIN,
         tutorial_overlay: TutorialOverlayView | None = None,
+        tutorial_seen_saver: Callable[[bool], None] | None = None,
     ) -> None:
         super().__init__()
         self._world: World = World(effects=effects, sound=sound)
@@ -144,6 +148,7 @@ class SoloGame(Game):
         self._evolution_graph: EvolutionGraphSink | None = evolution_graph
         self._evolution_graph_origin: tuple[int, int] = evolution_graph_origin
         self._tutorial_overlay: TutorialOverlayView | None = tutorial_overlay
+        self._tutorial_seen_saver: Callable[[bool], None] | None = tutorial_seen_saver
         self._known_enemies: set[int] = set()
         self._generation: int = (
             self._evolution_driver.get_generation() if self._evolution_driver else 0
@@ -179,7 +184,12 @@ class SoloGame(Game):
                 self._running = False
                 continue
             if self.is_tutorial_visible():
-                self._tutorial_overlay.handle_event(event)
+                overlay = self._tutorial_overlay
+                if overlay is not None:
+                    was_visible = overlay.is_visible()
+                    overlay.handle_event(event)
+                    if was_visible and not overlay.is_visible():
+                        self._save_tutorial_seen_if_requested(overlay)
                 continue
             self._builder.handle_event(event, self._world)
             self._fighter.handle_event(event, self._world)
@@ -243,6 +253,13 @@ class SoloGame(Game):
     def is_tutorial_visible(self) -> bool:
         """操作説明オーバーレイが表示中なら True を返す。"""
         return self._tutorial_overlay is not None and self._tutorial_overlay.is_visible()
+
+    def _save_tutorial_seen_if_requested(self, overlay: TutorialOverlayView) -> None:
+        """チェック欄が選ばれていればチュートリアル表示済みとして保存する。"""
+        if self._tutorial_seen_saver is None:
+            return
+        if overlay.get_skip_next_time():
+            self._tutorial_seen_saver(True)
 
     def _update_bosses(self, dt: float) -> None:
         """BossEnemy の特殊行動と撃破演出を呼ぶ。
