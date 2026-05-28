@@ -44,6 +44,23 @@ def test_menu_down_then_enter_returns_selected_value() -> None:
     assert menu.handle_event(pg.event.Event(pg.KEYDOWN, key=pg.K_RETURN)) == "host"
 
 
+def test_menu_options_include_tutorial() -> None:
+    """Tutorial option is included in the menu."""
+    values = [value for value, _label in MENU_OPTIONS]
+    assert "tutorial" in values
+
+
+def test_menu_tutorial_option_can_be_selected() -> None:
+    """Tutorial option can be selected with the existing menu logic."""
+    menu = MenuScene()
+    values = [value for value, _label in MENU_OPTIONS]
+    tutorial_index = values.index("tutorial")
+    for _ in range(tutorial_index):
+        menu.move_cursor(1)
+    assert menu.get_selected_value() == "tutorial"
+    assert menu.handle_event(pg.event.Event(pg.KEYDOWN, key=pg.K_RETURN)) == "tutorial"
+
+
 def test_menu_escape_and_quit_return_quit() -> None:
     """Esc / QUIT は "quit" を返す。"""
     assert MenuScene().handle_event(pg.event.Event(pg.KEYDOWN, key=pg.K_ESCAPE)) == "quit"
@@ -153,6 +170,8 @@ if __name__ == "__main__":
     test_menu_first_option_is_solo()
     test_menu_cursor_cycles_within_options()
     test_menu_down_then_enter_returns_selected_value()
+    test_menu_options_include_tutorial()
+    test_menu_tutorial_option_can_be_selected()
     test_menu_escape_and_quit_return_quit()
     test_menu_mouse_hover_and_click_selects_option()
     test_menu_click_outside_options_does_nothing()

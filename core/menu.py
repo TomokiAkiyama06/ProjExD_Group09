@@ -23,6 +23,7 @@ MENU_OPTIONS: list[tuple[str, str]] = [
     ("host", "Host  (Player 1)"),
     ("client", "Client  (Player 2)"),
     ("versus", "Versus  (1 PC / 2 fields)"),
+    ("tutorial", "Tutorial  (Controls)"),
     ("quit", "Quit"),
 ]
 
