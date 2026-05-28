@@ -516,6 +516,8 @@ if __name__ == "__main__":
     test_tutorial_overlay_draws_without_crash()
     test_tutorial_overlay_closes_with_key()
     test_tutorial_overlay_closes_with_click()
+    test_tutorial_overlay_skip_next_time_accessors()
+    test_tutorial_overlay_checkbox_click_toggles_without_closing()
     test_sound_manager_safe_when_no_sources()
     test_sound_manager_auto_load_handles_missing_dir()
     test_sound_manager_default_init_invokes_auto_load()
