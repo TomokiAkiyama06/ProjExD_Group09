@@ -244,6 +244,10 @@ TUTORIAL_TITLE_TO_BODY_GAP: int = 46
 TUTORIAL_SECTION_TITLE_GAP: int = 27
 TUTORIAL_SECTION_BOTTOM_GAP: int = 8
 
+# チュートリアル設定
+SETTINGS_FILE_NAME: str = "settings.json"
+SETTINGS_KEY_TUTORIAL_SEEN: str = "tutorial_seen"
+
 # 対戦
 VERSUS_FIELD_GAP: int = 16  # 2フィールド間の余白
 VERSUS_SEND_COST: int = 25  # 敵送信のリソース消費
