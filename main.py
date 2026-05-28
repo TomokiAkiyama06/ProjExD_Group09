@@ -26,6 +26,7 @@ def _build_solo_kwargs() -> dict:
         create_special_enemy,
     )
     from core.constants import SOLO_MAX_WAVE
+    from core.settings import set_tutorial_seen
     from evolution import EvolutionDriver, EvolutionManager
     from presentation import EvolutionGraph
     from presentation.sound_manager import SoundManager
@@ -68,6 +69,7 @@ def _build_solo_kwargs() -> dict:
         "evolution_driver": evolution_driver,
         "evolution_graph": evolution_graph,
         "tutorial_overlay": TutorialOverlay(),
+        "tutorial_seen_saver": set_tutorial_seen,
     }
 
 

@@ -19,6 +19,33 @@ from core.constants import (
 from core.solo_game import SoloGame
 
 
+class _FakeTutorialOverlay:
+    """保存連携テスト用のチュートリアルオーバーレイ。"""
+
+    def __init__(self, skip_next_time: bool) -> None:
+        self._visible: bool = True
+        self._skip_next_time: bool = skip_next_time
+
+    def is_visible(self) -> bool:
+        """表示中なら True を返す。"""
+        return self._visible
+
+    def handle_event(self, event: pg.event.Event) -> bool:
+        """何らかの入力を受けたら閉じる。"""
+        if event.type in {pg.KEYDOWN, pg.MOUSEBUTTONDOWN}:
+            self._visible = False
+            return True
+        return False
+
+    def get_skip_next_time(self) -> bool:
+        """次回から表示しない設定を返す。"""
+        return self._skip_next_time
+
+    def draw(self, screen: pg.Surface) -> None:
+        """テスト用なので描画しない。"""
+        _ = screen
+
+
 def _make_game() -> SoloGame:
     pg.init()
     pg.display.set_mode((400, 200))
@@ -71,6 +98,45 @@ def test_wave_clear_heal_clamped_to_max_hp() -> None:
     game._award_wave_clear_bonus()
 
     assert fortress.get_hp() == fortress.get_max_hp()
+
+
+
+def test_tutorial_seen_saved_when_skip_checked() -> None:
+    """チェック欄 ON で閉じると表示済みフラグ保存が呼ばれる。"""
+    pg.init()
+    pg.display.set_mode((400, 200))
+    saved_values: list[bool] = []
+    overlay = _FakeTutorialOverlay(skip_next_time=True)
+    game = SoloGame(
+        max_wave=BOSS_WAVE_MODULO,
+        tutorial_overlay=overlay,
+        tutorial_seen_saver=saved_values.append,
+    )
+
+    pg.event.post(pg.event.Event(pg.KEYDOWN, {"key": pg.K_ESCAPE}))
+    game.handle_events()
+
+    assert saved_values == [True]
+    assert not overlay.is_visible()
+
+
+def test_tutorial_seen_not_saved_when_skip_unchecked() -> None:
+    """チェック欄 OFF で閉じても表示済みフラグ保存は呼ばれない。"""
+    pg.init()
+    pg.display.set_mode((400, 200))
+    saved_values: list[bool] = []
+    overlay = _FakeTutorialOverlay(skip_next_time=False)
+    game = SoloGame(
+        max_wave=BOSS_WAVE_MODULO,
+        tutorial_overlay=overlay,
+        tutorial_seen_saver=saved_values.append,
+    )
+
+    pg.event.post(pg.event.Event(pg.KEYDOWN, {"key": pg.K_ESCAPE}))
+    game.handle_events()
+
+    assert saved_values == []
+    assert not overlay.is_visible()
 
 
 if __name__ == "__main__":
