@@ -12,7 +12,11 @@ from core.constants import (
     SCREEN_WIDTH,
     TUTORIAL_BACKDROP_ALPHA,
     TUTORIAL_BODY_FONT_SIZE,
+    TUTORIAL_CHECK_MARK_BOTTOM_OFFSET,
+    TUTORIAL_CHECK_MARK_CENTER_OFFSET,
+    TUTORIAL_CHECK_MARK_INSET,
     TUTORIAL_CHECK_MARK_WIDTH,
+    TUTORIAL_CHECKBOX_BORDER_WIDTH,
     TUTORIAL_CLOSE_BUTTON_SIZE,
     TUTORIAL_LINE_HEIGHT,
     TUTORIAL_PANEL_MARGIN,
@@ -209,17 +213,25 @@ class TutorialOverlay:
             self.SKIP_CHECKBOX_SIZE,
             self.SKIP_CHECKBOX_SIZE,
         )
-        pg.draw.rect(screen, HUD_PANEL_BORDER, self._skip_checkbox_rect, width=2)
+        pg.draw.rect(
+            screen,
+            HUD_PANEL_BORDER,
+            self._skip_checkbox_rect,
+            width=TUTORIAL_CHECKBOX_BORDER_WIDTH,
+        )
         if self._skip_next_time:
             start = (
-                self._skip_checkbox_rect.left + 4,
+                self._skip_checkbox_rect.left + TUTORIAL_CHECK_MARK_INSET,
                 self._skip_checkbox_rect.centery,
             )
             middle = (
-                self._skip_checkbox_rect.centerx - 1,
-                self._skip_checkbox_rect.bottom - 5,
+                self._skip_checkbox_rect.centerx - TUTORIAL_CHECK_MARK_CENTER_OFFSET,
+                self._skip_checkbox_rect.bottom - TUTORIAL_CHECK_MARK_BOTTOM_OFFSET,
             )
-            end = (self._skip_checkbox_rect.right - 4, self._skip_checkbox_rect.top + 4)
+            end = (
+                self._skip_checkbox_rect.right - TUTORIAL_CHECK_MARK_INSET,
+                self._skip_checkbox_rect.top + TUTORIAL_CHECK_MARK_INSET,
+            )
             pg.draw.lines(
                 screen,
                 COLOR_TEXT,

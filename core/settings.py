@@ -6,7 +6,11 @@ import json
 from pathlib import Path
 from typing import Any
 
-from core.constants import SETTINGS_FILE_NAME, SETTINGS_KEY_TUTORIAL_SEEN
+from core.constants import (
+    SETTINGS_FILE_NAME,
+    SETTINGS_JSON_INDENT,
+    SETTINGS_KEY_TUTORIAL_SEEN,
+)
 
 
 def get_settings_path() -> Path:
@@ -34,7 +38,7 @@ def save_settings(settings: dict[str, object], path: Path | None = None) -> None
     settings_path = path or get_settings_path()
     try:
         settings_path.parent.mkdir(parents=True, exist_ok=True)
-        text = json.dumps(settings, ensure_ascii=False, indent=2)
+        text = json.dumps(settings, ensure_ascii=False, indent=SETTINGS_JSON_INDENT)
         settings_path.write_text(f"{text}\n", encoding="utf-8")
     except OSError:
         return
