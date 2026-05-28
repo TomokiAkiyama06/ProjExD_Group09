@@ -256,7 +256,9 @@ class SoloGame(Game):
 
     def _save_tutorial_seen_if_requested(self, overlay: TutorialOverlayView) -> None:
         """チェック欄が選ばれていればチュートリアル表示済みとして保存する。"""
-        if overlay.get_skip_next_time() and self._tutorial_seen_saver is not None:
+        if self._tutorial_seen_saver is None:
+            return
+        if overlay.get_skip_next_time():
             self._tutorial_seen_saver(True)
 
     def _update_bosses(self, dt: float) -> None:

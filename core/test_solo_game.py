@@ -46,6 +46,28 @@ class _FakeTutorialOverlay:
         _ = screen
 
 
+class _LegacyTutorialOverlay:
+    """保存設定を持たない旧形式のチュートリアルオーバーレイ。"""
+
+    def __init__(self) -> None:
+        self._visible: bool = True
+
+    def is_visible(self) -> bool:
+        """表示中なら True を返す。"""
+        return self._visible
+
+    def handle_event(self, event: pg.event.Event) -> bool:
+        """何らかの入力を受けたら閉じる。"""
+        if event.type in {pg.KEYDOWN, pg.MOUSEBUTTONDOWN}:
+            self._visible = False
+            return True
+        return False
+
+    def draw(self, screen: pg.Surface) -> None:
+        """テスト用なので描画しない。"""
+        _ = screen
+
+
 def _make_game() -> SoloGame:
     pg.init()
     pg.display.set_mode((400, 200))
@@ -135,6 +157,19 @@ def test_tutorial_seen_not_saved_when_skip_unchecked() -> None:
     game.handle_events()
 
     assert saved_values == []
+    assert not overlay.is_visible()
+
+
+def test_tutorial_seen_saver_none_allows_legacy_overlay() -> None:
+    """保存コールバックが無い場合は旧形式オーバーレイでも閉じられる。"""
+    pg.init()
+    pg.display.set_mode((400, 200))
+    overlay = _LegacyTutorialOverlay()
+    game = SoloGame(max_wave=BOSS_WAVE_MODULO, tutorial_overlay=overlay)
+
+    pg.event.post(pg.event.Event(pg.KEYDOWN, {"key": pg.K_ESCAPE}))
+    game.handle_events()
+
     assert not overlay.is_visible()
 
 
