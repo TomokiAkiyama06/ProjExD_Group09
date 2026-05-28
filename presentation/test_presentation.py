@@ -203,6 +203,8 @@ def test_tutorial_overlay_checkbox_click_toggles_without_closing() -> None:
     assert handled
     assert overlay.is_visible()
     assert overlay.get_skip_next_time()
+
+
 # ===== SoundManager =====
 
 
@@ -496,6 +498,14 @@ def test_main_has_run_versus_callable() -> None:
     assert callable(main_module.run_versus)
 
 
+def test_main_should_show_tutorial_from_seen_flag() -> None:
+    """Tutorial_seen フラグから自動表示の有無を判定できる。"""
+    import main as main_module  # noqa: PLC0415 - main の軽量ヘルパー確認
+
+    assert main_module._should_show_tutorial(False)
+    assert not main_module._should_show_tutorial(True)
+
+
 if __name__ == "__main__":
     test_evolution_graph_add_and_latest()
     test_evolution_graph_max_records_trims_old()
@@ -530,4 +540,5 @@ if __name__ == "__main__":
     test_versus_handle_events_escape_stops_running()
     test_versus_try_send_from_uses_default_when_no_factory()
     test_main_has_run_versus_callable()
+    test_main_should_show_tutorial_from_seen_flag()
     print("All presentation tests passed.")

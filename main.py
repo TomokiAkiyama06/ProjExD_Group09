@@ -15,6 +15,11 @@ if TYPE_CHECKING:
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
+def _should_show_tutorial(tutorial_seen: bool) -> bool:
+    """チュートリアルを自動表示するかを返す。"""
+    return not tutorial_seen
+
+
 def _build_solo_kwargs() -> dict:
     """SoloGame / HostGame に注入する combat / towers / presentation / evolution の各コンポーネントをまとめる。"""  # noqa: E501
     from combat import (
@@ -26,7 +31,7 @@ def _build_solo_kwargs() -> dict:
         create_special_enemy,
     )
     from core.constants import SOLO_MAX_WAVE
-    from core.settings import set_tutorial_seen
+    from core.settings import get_tutorial_seen, set_tutorial_seen
     from evolution import EvolutionDriver, EvolutionManager
     from presentation import EvolutionGraph
     from presentation.sound_manager import SoundManager
@@ -47,7 +52,7 @@ def _build_solo_kwargs() -> dict:
     )
     # SoundManager(auto_load=True) で assets/sound/ 内の SE を自動キャッシュする
     sound = SoundManager()
-
+    tutorial_overlay = TutorialOverlay() if _should_show_tutorial(get_tutorial_seen()) else None
     return {
         "tower_factories": {
             "fire": FireTower,
@@ -68,7 +73,7 @@ def _build_solo_kwargs() -> dict:
         "max_wave": SOLO_MAX_WAVE,
         "evolution_driver": evolution_driver,
         "evolution_graph": evolution_graph,
-        "tutorial_overlay": TutorialOverlay(),
+        "tutorial_overlay": tutorial_overlay,
         "tutorial_seen_saver": set_tutorial_seen,
     }
 
