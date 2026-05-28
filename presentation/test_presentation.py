@@ -29,6 +29,7 @@ from core.world import World, _NullSound
 from presentation.evolution_graph import EvolutionGraph, GenerationRecord
 from presentation.extended_hud import ExtendedHud
 from presentation.sound_manager import SoundManager
+from presentation.tutorial import TutorialOverlay
 from presentation.versus_mode import VersusEvent, VersusGame
 
 
@@ -131,6 +132,77 @@ def test_extended_hud_with_optional_panels() -> None:
         "opponent_core_max_hp": 1000,
     }
     hud.draw(surface, state)
+
+
+# ===== TutorialOverlay =====
+
+
+def test_tutorial_overlay_visibility_controls() -> None:
+    overlay = TutorialOverlay()
+    assert overlay.is_visible()
+
+    overlay.hide()
+    assert not overlay.is_visible()
+
+    overlay.show()
+    assert overlay.is_visible()
+
+
+def test_tutorial_overlay_draws_without_crash() -> None:
+    pg.init()
+    surface = pg.Surface((960, 540))
+    overlay = TutorialOverlay()
+
+    overlay.draw(surface)
+
+    assert overlay.get_close_rect().width == overlay.CLOSE_BUTTON_SIZE
+
+
+def test_tutorial_overlay_closes_with_key() -> None:
+    overlay = TutorialOverlay()
+
+    handled = overlay.handle_event(pg.event.Event(pg.KEYDOWN, {"key": pg.K_ESCAPE}))
+
+    assert handled
+    assert not overlay.is_visible()
+
+
+def test_tutorial_overlay_closes_with_click() -> None:
+    overlay = TutorialOverlay()
+
+    handled = overlay.handle_event(
+        pg.event.Event(pg.MOUSEBUTTONDOWN, {"button": 1, "pos": (10, 10)})
+    )
+
+    assert handled
+    assert not overlay.is_visible()
+
+
+def test_tutorial_overlay_skip_next_time_accessors() -> None:
+    """次回から表示しない設定を getter / setter で扱える。"""
+    overlay = TutorialOverlay()
+
+    assert not overlay.get_skip_next_time()
+    overlay.set_skip_next_time(True)
+
+    assert overlay.get_skip_next_time()
+
+
+def test_tutorial_overlay_checkbox_click_toggles_without_closing() -> None:
+    """チェック欄クリックは設定だけ切り替え、オーバーレイは閉じない。"""
+    pg.init()
+    surface = pg.Surface((960, 540))
+    overlay = TutorialOverlay()
+    overlay.draw(surface)
+    checkbox_center = overlay.get_skip_checkbox_rect().center
+
+    handled = overlay.handle_event(
+        pg.event.Event(pg.MOUSEBUTTONDOWN, {"button": 1, "pos": checkbox_center})
+    )
+
+    assert handled
+    assert overlay.is_visible()
+    assert overlay.get_skip_next_time()
 
 
 # ===== SoundManager =====
@@ -426,12 +498,26 @@ def test_main_has_run_versus_callable() -> None:
     assert callable(main_module.run_versus)
 
 
+def test_main_should_show_tutorial_from_seen_flag() -> None:
+    """Tutorial_seen フラグから自動表示の有無を判定できる。"""
+    import main as main_module  # noqa: PLC0415 - main の軽量ヘルパー確認
+
+    assert main_module._should_show_tutorial(False)
+    assert not main_module._should_show_tutorial(True)
+
+
 if __name__ == "__main__":
     test_evolution_graph_add_and_latest()
     test_evolution_graph_max_records_trims_old()
     test_evolution_graph_draws_without_crash()
     test_extended_hud_basic_draw()
     test_extended_hud_with_optional_panels()
+    test_tutorial_overlay_visibility_controls()
+    test_tutorial_overlay_draws_without_crash()
+    test_tutorial_overlay_closes_with_key()
+    test_tutorial_overlay_closes_with_click()
+    test_tutorial_overlay_skip_next_time_accessors()
+    test_tutorial_overlay_checkbox_click_toggles_without_closing()
     test_sound_manager_safe_when_no_sources()
     test_sound_manager_auto_load_handles_missing_dir()
     test_sound_manager_default_init_invokes_auto_load()
@@ -456,4 +542,5 @@ if __name__ == "__main__":
     test_versus_handle_events_escape_stops_running()
     test_versus_try_send_from_uses_default_when_no_factory()
     test_main_has_run_versus_callable()
+    test_main_should_show_tutorial_from_seen_flag()
     print("All presentation tests passed.")
