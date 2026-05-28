@@ -52,7 +52,9 @@ def _build_solo_kwargs() -> dict:
     )
     # SoundManager(auto_load=True) で assets/sound/ 内の SE を自動キャッシュする
     sound = SoundManager()
-    tutorial_overlay = TutorialOverlay() if _should_show_tutorial(get_tutorial_seen()) else None
+    tutorial_overlay = TutorialOverlay()
+    if not _should_show_tutorial(get_tutorial_seen()):
+        tutorial_overlay.hide()
     return {
         "tower_factories": {
             "fire": FireTower,
