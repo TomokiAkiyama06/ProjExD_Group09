@@ -100,7 +100,6 @@ def test_wave_clear_heal_clamped_to_max_hp() -> None:
     assert fortress.get_hp() == fortress.get_max_hp()
 
 
-
 def test_tutorial_seen_saved_when_skip_checked() -> None:
     """チェック欄 ON で閉じると表示済みフラグ保存が呼ばれる。"""
     pg.init()
