@@ -53,5 +53,5 @@ def get_tutorial_seen(path: Path | None = None) -> bool:
 def set_tutorial_seen(value: bool, path: Path | None = None) -> None:
     """チュートリアル表示済みフラグを保存する。"""
     settings = load_settings(path)
-    settings[SETTINGS_KEY_TUTORIAL_SEEN] = bool(value)
+    settings[SETTINGS_KEY_TUTORIAL_SEEN] = value
     save_settings(settings, path)
