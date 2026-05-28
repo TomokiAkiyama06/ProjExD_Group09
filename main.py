@@ -133,6 +133,37 @@ def run_solo() -> None:
     game.run()
 
 
+def _run_tutorial_overlay() -> bool:
+    """Display the tutorial overlay from the startup menu.
+
+    Returns:
+        True if the overlay was closed normally, False if the window was closed.
+    """
+    import pygame as pg
+
+    from core.constants import COLOR_BG, FPS, SCREEN_HEIGHT, SCREEN_WIDTH
+    from presentation.tutorial import TutorialOverlay
+
+    screen = pg.display.get_surface()
+    if screen is None:
+        screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    clock = pg.time.Clock()
+    overlay = TutorialOverlay()
+    overlay.show()
+
+    while overlay.is_visible():
+        clock.tick(FPS)
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                return False
+            overlay.handle_event(event)
+        screen.fill(COLOR_BG)
+        overlay.draw(screen)
+        pg.display.flip()
+    return True
+
+
 def _run_from_menu(default_ip: str, port: int) -> None:
     """起動メニューを表示し、選択されたモードでゲームを開始する。
 
@@ -148,6 +179,10 @@ def _run_from_menu(default_ip: str, port: int) -> None:
         if choice == "quit":
             pg.quit()
             return
+        if choice == "tutorial":
+            if not _run_tutorial_overlay():
+                return
+            continue
         if choice == "client":
             ip = IpInputScene(initial_ip=default_ip).run()
             if ip is None:
