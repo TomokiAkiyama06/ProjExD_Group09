@@ -178,6 +178,31 @@ def test_tutorial_overlay_closes_with_click() -> None:
     assert not overlay.is_visible()
 
 
+def test_tutorial_overlay_skip_next_time_accessors() -> None:
+    """次回から表示しない設定を getter / setter で扱える。"""
+    overlay = TutorialOverlay()
+
+    assert not overlay.get_skip_next_time()
+    overlay.set_skip_next_time(True)
+
+    assert overlay.get_skip_next_time()
+
+
+def test_tutorial_overlay_checkbox_click_toggles_without_closing() -> None:
+    """チェック欄クリックは設定だけ切り替え、オーバーレイは閉じない。"""
+    pg.init()
+    surface = pg.Surface((960, 540))
+    overlay = TutorialOverlay()
+    overlay.draw(surface)
+    checkbox_center = overlay.get_skip_checkbox_rect().center
+
+    handled = overlay.handle_event(
+        pg.event.Event(pg.MOUSEBUTTONDOWN, {"button": 1, "pos": checkbox_center})
+    )
+
+    assert handled
+    assert overlay.is_visible()
+    assert overlay.get_skip_next_time()
 # ===== SoundManager =====
 
 
