@@ -138,10 +138,9 @@ def run_solo() -> None:
 
 
 def _run_tutorial_overlay() -> bool:
-    """Display the tutorial overlay from the startup menu.
+    """起動メニューから操作説明オーバーレイを表示する。
 
-    Returns:
-        True if the overlay was closed normally, False if the window was closed.
+    通常通り閉じた場合は True、ウィンドウが閉じられた場合は False を返す。
     """
     import pygame as pg
 
