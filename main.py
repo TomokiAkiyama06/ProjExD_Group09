@@ -160,7 +160,6 @@ def _run_tutorial_overlay() -> bool:
         clock.tick(FPS)
         for event in pg.event.get():
             if event.type == pg.QUIT:
-                pg.quit()
                 return False
             overlay.handle_event(event)
         screen.fill(COLOR_BG)
@@ -187,6 +186,7 @@ def _run_from_menu(default_ip: str, port: int) -> None:
             return
         if choice == "tutorial":
             if not _run_tutorial_overlay():
+                pg.quit()
                 return
             continue
         if choice == "client":
