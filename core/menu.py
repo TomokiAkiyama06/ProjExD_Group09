@@ -1,7 +1,7 @@
 """起動時のモード選択メニューシーン。
 
-引数なし起動時に表示し、Solo / Host / Client / Versus / Quit から選ばせる。
-`run()` は選択結果の文字列（"solo" / "host" / "client" / "versus" / "quit"）を返す。
+引数なし起動時に表示し、Solo / Host / Client / Versus / Tutorial / Quit から選ばせる。
+`run()` は選択結果の文字列（"solo" / "host" / "client" / "versus" / "tutorial" / "quit"）を返す。
 実際のゲーム起動は呼び出し側（main.py）が行う。
 
 単体での動作確認はリポジトリルートで `python -m core.menu` を使う。
@@ -23,6 +23,7 @@ MENU_OPTIONS: list[tuple[str, str]] = [
     ("host", "Host  (Player 1)"),
     ("client", "Client  (Player 2)"),
     ("versus", "Versus  (1 PC / 2 fields)"),
+    ("tutorial", "Tutorial  (Controls)"),
     ("quit", "Quit"),
 ]
 

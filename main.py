@@ -52,7 +52,11 @@ def _build_solo_kwargs() -> dict:
     )
     # SoundManager(auto_load=True) で assets/sound/ 内の SE を自動キャッシュする
     sound = SoundManager()
-    tutorial_overlay = TutorialOverlay() if _should_show_tutorial(get_tutorial_seen()) else None
+    tutorial_seen = get_tutorial_seen()
+    tutorial_overlay = TutorialOverlay()
+    tutorial_overlay.set_skip_next_time(tutorial_seen)
+    if not _should_show_tutorial(tutorial_seen):
+        tutorial_overlay.hide()
     return {
         "tower_factories": {
             "fire": FireTower,
@@ -133,6 +137,38 @@ def run_solo() -> None:
     game.run()
 
 
+def _run_tutorial_overlay() -> bool:
+    """起動メニューから操作説明オーバーレイを表示する。
+
+    通常通り閉じた場合は True、ウィンドウが閉じられた場合は False を返す。
+    """
+    import pygame as pg
+
+    from core.constants import COLOR_BG, FPS, SCREEN_HEIGHT, SCREEN_WIDTH
+    from core.settings import get_tutorial_seen, set_tutorial_seen
+    from presentation.tutorial import TutorialOverlay
+
+    screen = pg.display.get_surface()
+    if screen is None:
+        screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    clock = pg.time.Clock()
+    overlay = TutorialOverlay()
+    overlay.set_skip_next_time(get_tutorial_seen())
+    overlay.show()
+
+    while overlay.is_visible():
+        clock.tick(FPS)
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                return False
+            overlay.handle_event(event)
+        screen.fill(COLOR_BG)
+        overlay.draw(screen)
+        pg.display.flip()
+    set_tutorial_seen(overlay.get_skip_next_time())
+    return True
+
+
 def _run_from_menu(default_ip: str, port: int) -> None:
     """起動メニューを表示し、選択されたモードでゲームを開始する。
 
@@ -148,6 +184,11 @@ def _run_from_menu(default_ip: str, port: int) -> None:
         if choice == "quit":
             pg.quit()
             return
+        if choice == "tutorial":
+            if not _run_tutorial_overlay():
+                pg.quit()
+                return
+            continue
         if choice == "client":
             ip = IpInputScene(initial_ip=default_ip).run()
             if ip is None:

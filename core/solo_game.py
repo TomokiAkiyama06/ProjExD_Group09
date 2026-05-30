@@ -97,6 +97,8 @@ BossSpawnedHandler = Callable[["BossEnemy"], None]
 class SoloGame(Game):
     """1台で両プレイヤーを操作するゲームモード。"""
 
+    TUTORIAL_OPEN_KEYS: tuple[int, ...] = (pg.K_p, pg.K_F1)
+
     def __init__(  # noqa: PLR0913 - solo モードは合成層なので注入引数が増えやすい
         self,
         tower_factories: dict[str, TowerFactory] | None = None,
@@ -191,6 +193,9 @@ class SoloGame(Game):
                     if was_visible and not overlay.is_visible():
                         self._save_tutorial_seen_if_requested(overlay)
                 continue
+            if self._is_tutorial_open_event(event):
+                self._show_tutorial_overlay()
+                continue
             self._builder.handle_event(event, self._world)
             self._fighter.handle_event(event, self._world)
 
@@ -254,12 +259,24 @@ class SoloGame(Game):
         """操作説明オーバーレイが表示中なら True を返す。"""
         return self._tutorial_overlay is not None and self._tutorial_overlay.is_visible()
 
+    def _is_tutorial_open_event(self, event: pg.event.Event) -> bool:
+        """ゲーム中に操作説明を開く入力なら True を返す。"""
+        return event.type == pg.KEYDOWN and event.key in self.TUTORIAL_OPEN_KEYS
+
+    def _show_tutorial_overlay(self) -> None:
+        """非表示の操作説明オーバーレイをゲーム中に再表示する。"""
+        overlay = self._tutorial_overlay
+        if overlay is None:
+            return
+        show = getattr(overlay, "show", None)
+        if callable(show):
+            show()
+
     def _save_tutorial_seen_if_requested(self, overlay: TutorialOverlayView) -> None:
-        """チェック欄が選ばれていればチュートリアル表示済みとして保存する。"""
+        """チェック欄の状態をチュートリアル表示済みフラグとして保存する。"""
         if self._tutorial_seen_saver is None:
             return
-        if overlay.get_skip_next_time():
-            self._tutorial_seen_saver(True)
+        self._tutorial_seen_saver(overlay.get_skip_next_time())
 
     def _update_bosses(self, dt: float) -> None:
         """BossEnemy の特殊行動と撃破演出を呼ぶ。
